@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}AI-Powered HR Helpdesk{% endblock %} — YottaFlex FDE</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="{{ url_for('employee_home') }}" class="nav-brand">
+      <span>🛡️ Enterprise HR Helpdesk</span>
+      <span class="brand-badge">AI Powered</span>
+    </a>
+
+    <nav class="nav-links">
+      <a href="{{ url_for('employee_home') }}" class="nav-link {% if request.endpoint in ('employee_home', 'new_ticket') %}active{% endif %}">
+        👤 Employee Helpdesk
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+        📊 HR Admin Dashboard
+      </a>
+      <a href="{{ url_for('policy_list') }}" class="nav-link {% if request.endpoint == 'policy_list' %}active{% endif %}">
+        📜 Policy Hub
+      </a>
+    </nav>
+
+    <div class="nav-user">
+      <form action="{{ url_for('select_employee') }}" method="POST" class="user-selector-form" title="Simulated employee identity for local demo">
+        <label for="employee_id" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Demo User:</label>
+        <select name="employee_id" id="employee_id" onchange="this.form.submit()">
+          {% for emp in demo_employees %}
+            <option value="{{ emp.employee_id }}" {% if emp.employee_id == current_employee.employee_id %}selected{% endif %}>
+              {{ emp.full_name }} ({{ emp.employee_id }})
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+  </header>
+
+  <!-- Flash Messages -->
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+              <span>{{ message }}</span>
+              <button onclick="this.parentElement.remove()" style="background: none; border: none; cursor: pointer; font-size: 1.1rem; color: inherit;">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% if error_message %}
+      <div class="card" style="border-left: 4px solid var(--danger);">
+        <h2 style="color: var(--danger); margin-bottom: 0.5rem;">Error</h2>
+        <p>{{ error_message }}</p>
+        <div style="margin-top: 1rem;">
+          <a href="{{ url_for('employee_home') }}" class="btn btn-secondary">Return to Employee Home</a>
+        </div>
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+      <div>
+        <strong>YottaFlex AI Forward Deployed Engineer Challenge</strong> — 72-Hour Code Challenge
+      </div>
+      <div>
+        <span style="color: var(--text-muted);">
+          Demo Mode: 100% Synthetic Policies & Employees | Local SQLite & Rule-Based AI Fallback
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

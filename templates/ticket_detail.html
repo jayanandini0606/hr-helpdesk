@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block title %}Ticket {{ ticket.ticket_id }} — {{ ticket.subject }}{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+  <a href="{{ url_for('employee_home') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+    &larr; Back to Requests
+  </a>
+  <span style="font-size: 0.85rem; color: var(--text-muted);">
+    Ticket Age: <strong>{{ ticket_age }}</strong> &bull; Created: <strong>{{ ticket.created_at|format_dt }}</strong>
+  </span>
+</div>
+
+<!-- Header Card -->
+<div class="card" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+        <span style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">
+          {{ ticket.ticket_id }}
+        </span>
+        <span class="badge {{ ticket.status|status_badge }}">{{ ticket.status }}</span>
+        <span class="badge {{ ticket.priority|priority_badge }}">{{ ticket.priority }} Priority</span>
+        <span class="badge badge-default" style="background: #e2e8f0; color: #334155;">{{ ticket.category_name }}</span>
+
+        {% if ticket.sensitive_flag == 1 %}
+          <span class="badge badge-sensitive">🔒 Sensitive / Restricted Case</span>
+        {% endif %}
+
+        {% if sla_status.is_resolution_overdue %}
+          <span class="badge badge-overdue">⚠️ Overdue SLA</span>
+        {% endif %}
+
+        {% if ticket.issue_type and ticket.issue_type != 'Standard' %}
+          <span class="badge badge-priority-critical" title="Deliberate Injected Anomaly">
+            ⚠️ Anomaly Test Case: {{ ticket.issue_type }}
+          </span>
+        {% endif %}
+      </div>
+      <h2 style="font-size: 1.25rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.5rem;">
+        {{ ticket.subject }}
+      </h2>
+      <div style="font-size: 0.88rem; color: var(--text-muted);">
+        Requested by: <strong>{{ ticket.employee_name }}</strong> ({{ ticket.employee_id }}) &bull; Current Queue: <span class="badge badge-default" style="background: #dbeafe; color: #1e40af; font-weight: 600;">{{ current_assignment.assigned_queue if current_assignment else ticket.category_queue }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="layout-split">
+  <!-- Left Column: Messages & Citations -->
+  <div>
+    <!-- Conversation Messages -->
+    <div class="card">
+      <div class="card-title">
+        <span>💬 Conversation & Case History</span>
+        <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
+          {{ messages|length }} message(s)
+        </span>
+      </div>
+
+      <div class="conversation-timeline">
+        {% for msg in messages %}
+          <div class="message-box {% if msg.sender_type == 'Assistant' %}{% if ticket.sensitive_flag == 1 %}message-escalation{% else %}message-assistant{% endif %}{% endif %}">
+            <div class="message-header">
+              <span class="message-sender">
+                {% if msg.sender_type == 'Employee' %}
+                  👤 {{ ticket.employee_name }} (Employee)
+                {% elif msg.sender_type == 'Assistant' %}
+                  🤖 AI Helpdesk Assistant
+                {% elif msg.sender_type == 'HR' %}
+                  👔 HR Partner Specialist
+                {% else %}
+                  ⚙️ System Event
+                {% endif %}
+                <span class="badge badge-default" style="font-size: 0.7rem; background: #e2e8f0;">{{ msg.message_type }}</span>
+              </span>
+              <span class="message-time">#{{ msg.sequence_number }} &bull; {{ msg.created_at|format_dt }}</span>
+            </div>
+
+            <div style="white-space: pre-line; font-size: 0.95rem; line-height: 1.6; color: #1e293b;">
+              {{ msg.message_text }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      <!-- Policy Citations Highlight Card -->
+      {% if citations %}
+        <div class="citation-card">
+          <div class="citation-title">
+            📚 Grounded Policy Sources Cited ({{ citations|length }})
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Answers are deterministically linked to official, active policy documents and published versions:
+          </div>
+
+          {% for cit in citations %}
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 0.75rem; margin-bottom: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <strong style="color: var(--primary);">{{ cit.policy_title }}</strong>
+                <span class="badge badge-resolved" style="font-size: 0.7rem;">Version {{ cit.version_number }} (Active)</span>
+              </div>
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.4rem;">
+                Policy ID: <code>{{ cit.policy_id }}</code> &bull; Version ID: <code>{{ cit.version_id }}</code> &bull; Article ID: <code>{{ cit.article_id }}</code>
+              </div>
+              <div style="font-size: 0.85rem; color: #334155; font-style: italic; background: white; padding: 0.5rem; border-left: 3px solid var(--primary); border-radius: 4px;">
+                "{{ cit.snippet }}"
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Reply / Clarification Form -->
+    <div class="card">
+      <div class="card-title">
+        <span>Post a Reply / Add Information</span>
+      </div>
+
+      <form action="{{ url_for('post_ticket_message', ticket_id=ticket.ticket_id) }}" method="POST">
+        <div class="form-group" style="margin-bottom: 0.75rem;">
+          <label class="form-label">Post As:</label>
+          <div style="display: flex; gap: 1rem;">
+            <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+              <input type="radio" name="sender_type" value="Employee" checked> Employee ({{ ticket.employee_name }})
+            </label>
+            <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+              <input type="radio" name="sender_type" value="HR"> HR Specialist
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <textarea name="message_text" class="form-control" rows="3" placeholder="Type clarification, additional details, or case notes here..." required></textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn btn-primary btn-sm">
+            Send Message &rarr;
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Right Column: Metadata, SLA, Assignments & Admin Controls -->
+  <div>
+    <!-- Classification & Routing Details -->
+    <div class="card">
+      <div class="card-title" style="font-size: 1rem;">
+        <span>🎯 Classification & Routing</span>
+      </div>
+
+      <div style="font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.65rem;">
+        <div>
+          <span style="color: var(--text-muted); display: block;">Category:</span>
+          <strong>{{ ticket.category_name }}</strong> (<code>{{ ticket.category_id }}</code>)
+        </div>
+
+        <div>
+          <span style="color: var(--text-muted); display: block;">Assigned Queue:</span>
+          <strong style="color: var(--primary);">{{ current_assignment.assigned_queue if current_assignment else ticket.category_queue }}</strong>
+        </div>
+
+        <div>
+          <span style="color: var(--text-muted); display: block;">Routing Reason:</span>
+          <span style="color: #334155; font-size: 0.85rem;">{{ current_assignment.reason if current_assignment else "Default category routing" }}</span>
+        </div>
+
+        {% if ticket.sensitive_flag == 1 %}
+          <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); padding: 0.6rem; border-radius: 6px;">
+            <strong style="color: var(--danger); display: block; font-size: 0.85rem;">🔒 Sensitive Case Protections:</strong>
+            <span style="font-size: 0.8rem; color: #991b1b;">
+              AI automatic resolution disabled. Details restricted to authorized personnel in queue <strong>{{ current_assignment.assigned_queue }}</strong>.
+            </span>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- SLA Tracking Card -->
+    {% if sla %}
+      <div class="card">
+        <div class="card-title" style="font-size: 1rem;">
+          <span>⏱️ Service Level Agreement (SLA)</span>
+        </div>
+
+        <div style="font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.75rem;">
+          <div>
+            <span style="color: var(--text-muted); display: block;">SLA Policy:</span>
+            <strong>{{ sla.policy_name }}</strong>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+              <span style="color: var(--text-muted);">First Response SLA:</span>
+              {% if sla.response_met == 1 %}
+                <span class="badge badge-resolved">Met</span>
+              {% elif sla_status.is_response_overdue %}
+                <span class="badge badge-overdue">Breached</span>
+              {% else %}
+                <span class="badge badge-open">Pending</span>
+              {% endif %}
+            </div>
+            <div style="font-size: 0.8rem; color: #475569;">
+              Due: {{ sla.response_due_at|format_dt }}
+            </div>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
+              <span style="color: var(--text-muted);">Resolution SLA:</span>
+              {% if sla.resolution_met == 1 %}
+                <span class="badge badge-resolved">Met</span>
+              {% elif sla_status.is_resolution_overdue %}
+                <span class="badge badge-overdue">Overdue</span>
+              {% elif ticket.status in ('Resolved', 'Closed') %}
+                <span class="badge badge-priority-critical">Breached</span>
+              {% else %}
+                <span class="badge badge-open">Pending</span>
+              {% endif %}
+            </div>
+            <div style="font-size: 0.8rem; color: #475569;">
+              Due: {{ sla.resolution_due_at|format_dt }}
+            </div>
+          </div>
+
+          <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 0.5rem;">
+            Calendar: {{ sla.business_calendar }}
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Resolution Outcome Card -->
+    {% if resolution %}
+      <div class="card">
+        <div class="card-title" style="font-size: 1rem;">
+          <span>🏁 Resolution Details</span>
+        </div>
+        <div style="font-size: 0.88rem;">
+          <div style="margin-bottom: 0.5rem;">
+            <span style="color: var(--text-muted);">Outcome:</span>
+            <span class="badge {% if resolution.outcome == 'Answered' %}badge-resolved{% elif resolution.outcome == 'Escalated' %}badge-in-progress{% else %}badge-default{% endif %}">
+              {{ resolution.outcome }}
+            </span>
+          </div>
+          <div style="color: #334155; font-size: 0.85rem; margin-bottom: 0.5rem;">
+            {{ resolution.resolution_summary }}
+          </div>
+          {% if resolution.resolved_at %}
+            <div style="font-size: 0.8rem; color: var(--text-muted);">
+              Resolved At: {{ resolution.resolved_at|format_dt }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Admin Workflow Controls -->
+    <div class="card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
+      <div class="card-title" style="font-size: 1rem;">
+        <span>🛠️ HR Admin Controls</span>
+      </div>
+
+      <!-- Reassign form -->
+      <form action="{{ url_for('admin_reassign', ticket_id=ticket.ticket_id) }}" method="POST" style="margin-bottom: 1.25rem;">
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <label class="form-label" style="font-size: 0.8rem;">Reassign Queue:</label>
+          <select name="new_queue" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
+            {% for q in available_queues %}
+              <option value="{{ q }}" {% if current_assignment and current_assignment.assigned_queue == q %}selected{% endif %}>
+                {{ q }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <input type="text" name="reason" class="form-control" placeholder="Reassignment reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+          Update Assignment
+        </button>
+      </form>
+
+      <!-- Status update form -->
+      <form action="{{ url_for('admin_status', ticket_id=ticket.ticket_id) }}" method="POST">
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <label class="form-label" style="font-size: 0.8rem;">Change Status:</label>
+          <select name="status" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
+            {% for st in ['Open', 'In_Progress', 'Awaiting_Employee', 'Resolved', 'Closed'] %}
+              <option value="{{ st }}" {% if ticket.status == st %}selected{% endif %}>
+                {{ st }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0.5rem;">
+          <input type="text" name="reason" class="form-control" placeholder="Status change reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
+          Update Ticket Status
+        </button>
+      </form>
+    </div>
+
+    <!-- Audit Event History -->
+    <div class="card">
+      <div class="card-title" style="font-size: 1rem;">
+        <span>📜 Audit Event Trail</span>
+      </div>
+      <ul class="event-timeline">
+        {% for evt in events %}
+          <li class="event-item">
+            <div style="font-weight: 600; color: var(--text-main);">
+              {{ evt.old_status or "None" }} &rarr; {{ evt.new_status }}
+            </div>
+            <div style="color: var(--text-muted); font-size: 0.8rem;">
+              {{ evt.reason }}
+            </div>
+            <div style="color: #94a3b8; font-size: 0.75rem;">
+              {{ evt.occurred_at|format_dt }}
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

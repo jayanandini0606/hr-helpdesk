@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Policy Management & Versioning{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
+      📜 Policy Documents & Version Control Hub
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+      Immutable version history, effective date boundaries, and linked knowledge articles.
+    </p>
+  </div>
+
+  <!-- As of Date Selector for Time-Travel Policy Lookup -->
+  <div class="card" style="margin-bottom: 0; padding: 0.75rem 1.25rem; background: white;">
+    <form action="{{ url_for('policy_list') }}" method="GET" style="display: flex; align-items: center; gap: 0.75rem;">
+      <label for="as_of_date" style="font-size: 0.85rem; font-weight: 600; white-space: nowrap;">
+        📅 Test Applicability As Of:
+      </label>
+      <input type="date" name="as_of_date" id="as_of_date" class="form-control" style="padding: 0.35rem 0.65rem; font-size: 0.85rem;" value="{{ selected_date }}">
+      <button type="submit" class="btn btn-primary btn-sm">Check</button>
+      <a href="{{ url_for('policy_list') }}" class="btn btn-secondary btn-sm" title="Reset to today">Today</a>
+    </form>
+  </div>
+</div>
+
+<div class="card" style="background: #f8fafc; border-color: #cbd5e1; margin-bottom: 1.5rem;">
+  <div style="font-size: 0.88rem; color: #334155; line-height: 1.5;">
+    <strong>ℹ️ Version Selection Guarantee:</strong> The AI Helpdesk determines the applicable policy by verifying that the version status is <code>Published</code> and the effective range satisfies <code>effective_from &le; ticket_date &le; effective_to</code>. It never blindly assumes the highest version number is active (e.g. policies 19 and 20 possess Version 2 in <code>Draft</code> status for future revision, so Version 1 is correctly selected).
+  </div>
+</div>
+
+<!-- Policy Documents Accordion / Cards -->
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+  {% for pol in policies %}
+    <div class="card" style="margin-bottom: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+            <span style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">
+              {{ pol.title }}
+            </span>
+            <code style="background: #e2e8f0; padding: 0.15rem 0.4rem; border-radius: 4px; font-size: 0.8rem;">
+              {{ pol.policy_id }}
+            </code>
+          </div>
+          <div style="font-size: 0.85rem; color: var(--text-muted);">
+            Category: <strong>{{ pol.category_name }}</strong> &bull; Owner: <strong>{{ pol.department_name }}</strong> &bull; Audience: <strong>{{ pol.audience }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- Versions Table -->
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 110px;">Version</th>
+              <th style="width: 100px;">Status</th>
+              <th style="width: 180px;">Effective Window</th>
+              <th>Policy Guidelines & Rules</th>
+              <th style="width: 140px;">Applicability</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for v in pol.versions %}
+              <tr style="{% if v.is_active %}background-color: #f0fdf4;{% endif %}">
+                <td>
+                  <strong>v{{ v.version_number }}</strong>
+                  <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">
+                    {{ v.version_id }}
+                  </span>
+                </td>
+                <td>
+                  {% if v.status == 'Published' %}
+                    <span class="badge badge-resolved">Published</span>
+                  {% elif v.status == 'Draft' %}
+                    <span class="badge badge-in-progress">Draft</span>
+                  {% else %}
+                    <span class="badge badge-closed">Retired</span>
+                  {% endif %}
+                </td>
+                <td style="font-size: 0.82rem; color: #334155;">
+                  <div>From: <strong>{{ v.effective_from }}</strong></div>
+                  <div>To: <strong>{{ v.effective_to or 'Indefinite' }}</strong></div>
+                </td>
+                <td>
+                  <div style="font-size: 0.88rem; color: #1e293b; margin-bottom: 0.4rem;">
+                    {{ v.policy_text }}
+                  </div>
+                  {% if v.articles %}
+                    <details style="font-size: 0.8rem; color: var(--primary); cursor: pointer;">
+                      <summary>Linked Articles ({{ v.articles|length }})</summary>
+                      <ul style="margin-top: 0.4rem; padding-left: 1.25rem; color: #475569;">
+                        {% for a in v.articles %}
+                          <li><code>{{ a.article_id }}</code> — {{ a.title }} ({{ a.status }})</li>
+                        {% endfor %}
+                      </ul>
+                    </details>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if v.is_active %}
+                    <span class="badge badge-resolved" style="padding: 0.35rem 0.65rem; font-weight: 700;">
+                      ⭐ ACTIVE VERSION
+                    </span>
+                  {% else %}
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">
+                      Not applicable on {{ selected_date }}
+                    </span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

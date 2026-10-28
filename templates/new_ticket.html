@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Submit New HR Request{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 1.25rem;">
+  <a href="{{ url_for('employee_home') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+    &larr; Back to My Requests
+  </a>
+</div>
+
+<div class="layout-split">
+  <!-- Ticket Submission Form -->
+  <div>
+    <div class="card">
+      <div class="card-title">
+        <span>Submit a New HR Request</span>
+      </div>
+
+      <form action="{{ url_for('new_ticket') }}" method="POST">
+        <div class="form-group">
+          <label for="subject" class="form-label">Subject / Short Summary <span style="color: var(--danger);">*</span></label>
+          <input type="text" name="subject" id="subject" class="form-control" placeholder="e.g., How do I access my monthly payslip?" required value="{{ subject or '' }}">
+        </div>
+
+        <div class="form-group">
+          <label for="category_id" class="form-label">Category</label>
+          <select name="category_id" id="category_id" class="form-control">
+            <option value="">✨ Auto-detect based on topic (Recommended)</option>
+            {% for cat in categories_list %}
+              <option value="{{ cat[0] }}" {% if category_id == cat[0] %}selected{% endif %}>
+                {{ cat[1] }} (Default Queue: {{ cat[2] }})
+              </option>
+            {% endfor %}
+          </select>
+          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem; display: block;">
+            Leave as auto-detect to let the classification engine match the optimal policy area.
+          </span>
+        </div>
+
+        <div class="form-group">
+          <label for="description" class="form-label">Detailed Request / Inquiry <span style="color: var(--danger);">*</span></label>
+          <textarea name="description" id="description" class="form-control" rows="6" placeholder="Provide as much detail as possible so the system can retrieve the exact policy guidelines or route your request to the right team..." required>{{ description or '' }}</textarea>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem;">
+          <a href="{{ url_for('employee_home') }}" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary" style="padding: 0.6rem 1.5rem;">
+            Submit Request &rarr;
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Helpful Info Sidebar -->
+  <div>
+    <div class="card" style="background: #f8fafc; border-color: #cbd5e1;">
+      <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem;">💡 How Your Request is Handled</h3>
+      <ul style="font-size: 0.88rem; color: #334155; line-height: 1.6; padding-left: 1.25rem; margin-bottom: 1.25rem;">
+        <li><strong>Routine Inquiries:</strong> Grounded policy knowledge articles and published policy versions are checked immediately to provide an instant, cited answer.</li>
+        <li><strong>Sensitive Issues:</strong> Workplace harassment, salary disputes, or grievance complaints are <em>never</em> answered by automated bots. They are immediately tagged, protected, and assigned to human HR partners.</li>
+        <li><strong>SLA Monitored:</strong> Response and resolution targets are calculated and tracked against our business calendar.</li>
+      </ul>
+
+      <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">Try a Demo Prompt:</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;" onclick="fillDemo('How do I access my monthly payslip?', 'I am looking for guidance on where to view and download my monthly salary payslips.')">
+          📄 Payslip Access (Routine)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;" onclick="fillDemo('Unexpected deduction in my monthly salary', 'There is an unexpected deduction of $450 from my salary this month without explanation. Please review this discrepancy.')">
+          💰 Salary Dispute (Sensitive)
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start;" onclick="fillDemo('Harassment complaint regarding senior team member', 'I need to report ongoing inappropriate comments and harassment from a senior team lead in strict confidence.')">
+          🔒 Harassment Report (Confidential)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillDemo(subj, desc) {
+  document.getElementById('subject').value = subj;
+  document.getElementById('description').value = desc;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Employee Helpdesk{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
+      Welcome, {{ employee.full_name }}
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+      ID: <strong>{{ employee.employee_id }}</strong> &bull; Department: <strong>{{ employee.department_name }}</strong> &bull; Status: <span class="badge badge-resolved">{{ employee.employment_status }}</span>
+    </p>
+  </div>
+  <div>
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.95rem;">
+      ✍️ Submit New HR Request
+    </a>
+  </div>
+</div>
+
+<!-- Employee Stats Grid -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-label">Total Requests</span>
+    <span class="stat-value">{{ total_tickets }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Active / In Review</span>
+    <span class="stat-value" style="color: var(--warning);">{{ in_progress_tickets }}</span>
+  </div>
+  <div class="stat-card">
+    <span class="stat-label">Resolved</span>
+    <span class="stat-value" style="color: var(--success);">{{ resolved_tickets }}</span>
+  </div>
+</div>
+
+<!-- My Ticket History Table -->
+<div class="card">
+  <div class="card-title">
+    <span>My Submitted Requests</span>
+    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
+      Showing {{ tickets|length }} ticket(s)
+    </span>
+  </div>
+
+  {% if tickets %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+            <th>Subject</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Submitted</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}">
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
+                  {{ t.ticket_id }}
+                </a>
+              </td>
+              <td>
+                <span style="font-weight: 500;">{{ t.subject }}</span>
+                {% if t.sensitive_flag == 1 %}
+                  <span class="badge badge-sensitive" style="margin-left: 0.4rem;" title="Restricted confidential handling">
+                    🔒 Sensitive
+                  </span>
+                {% endif %}
+              </td>
+              <td>{{ t.category_name }}</td>
+              <td><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
+              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
+              <td style="color: var(--text-muted);">{{ t.created_at|format_dt }}</td>
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn btn-secondary btn-sm">
+                  View &rarr;
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 3rem 1rem;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
+      <h3 style="font-weight: 600; margin-bottom: 0.4rem;">No Requests Submitted Yet</h3>
+      <p style="color: var(--text-muted); max-width: 450px; margin: 0 auto 1.25rem;">
+        Have a question regarding benefits, leaves, payroll schedules, or company guidelines? Submit a request and our AI assistant will provide instant, grounded policy answers.
+      </p>
+      <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">Create Your First Ticket</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

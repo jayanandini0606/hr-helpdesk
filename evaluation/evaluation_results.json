@@ -1,0 +1,409 @@
+{
+  "executed_at": "2026-10-28T06:53:12.352522+00:00",
+  "total_test_cases": 25,
+  "passed": 25,
+  "failed": 0,
+  "pass_rate_percentage": 100.0,
+  "results": [
+    {
+      "test_case_id": "TC-001",
+      "name": "Payslip Portal Access",
+      "subject": "How do I download my monthly payslip PDF?",
+      "expected_category": "CAT-003",
+      "actual_category": "CAT-003",
+      "expected_queue": "Payroll",
+      "actual_queue": "Payroll",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-010"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-002",
+      "name": "Unexpected Salary Deduction",
+      "subject": "Unexpected deduction of $450 in October salary",
+      "expected_category": "CAT-003",
+      "actual_category": "CAT-003",
+      "expected_queue": "Payroll",
+      "actual_queue": "Payroll",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-003",
+      "name": "Workplace Harassment Complaint",
+      "subject": "Formal harassment complaint regarding manager behavior",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-004",
+      "name": "Unavailable Policy (Mountaineering Sabbatical)",
+      "subject": "Request for 6-month paid sabbatical leave for mountain expedition",
+      "expected_category": "CAT-002",
+      "actual_category": "CAT-002",
+      "expected_queue": "Leave",
+      "actual_queue": "Leave",
+      "expected_outcome": "Unresolved",
+      "actual_outcome": "Unresolved",
+      "sensitive_flag": 0,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-005",
+      "name": "Applicable Policy Version Selection (Health Insurance)",
+      "subject": "Health insurance annual enrollment window and rules",
+      "expected_category": "CAT-001",
+      "actual_category": "CAT-001",
+      "expected_queue": "Benefits",
+      "actual_queue": "Benefits",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-001",
+        "POL-HR-2026-003",
+        "POL-HR-2026-004"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-006",
+      "name": "Sick Leave Medical Certificate Requirement",
+      "subject": "Doctor note requirements for consecutive sick days",
+      "expected_category": "CAT-002",
+      "actual_category": "CAT-002",
+      "expected_queue": "Leave",
+      "actual_queue": "Leave",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-005",
+        "POL-HR-2026-006",
+        "POL-HR-2026-007"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-007",
+      "name": "Annual Leave Accrual Rate",
+      "subject": "Annual leave accrual calculation for regular staff",
+      "expected_category": "CAT-002",
+      "actual_category": "CAT-002",
+      "expected_queue": "Leave",
+      "actual_queue": "Leave",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-005",
+        "POL-HR-2026-006",
+        "POL-HR-2026-007"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-008",
+      "name": "Public Holiday Calendar Location",
+      "subject": "Upcoming public holidays for remote workers",
+      "expected_category": "CAT-002",
+      "actual_category": "CAT-002",
+      "expected_queue": "Leave",
+      "actual_queue": "Leave",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-005",
+        "POL-HR-2026-006",
+        "POL-HR-2026-008"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-009",
+      "name": "Salary Disbursement Schedule",
+      "subject": "When is monthly salary disbursed?",
+      "expected_category": "CAT-003",
+      "actual_category": "CAT-003",
+      "expected_queue": "Payroll",
+      "actual_queue": "Payroll",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-009",
+        "POL-HR-2026-011",
+        "POL-HR-2026-012"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-010",
+      "name": "Bank Account Update Deadline",
+      "subject": "Cutoff date for direct deposit bank account changes",
+      "expected_category": "CAT-003",
+      "actual_category": "CAT-003",
+      "expected_queue": "Payroll",
+      "actual_queue": "Payroll",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-011",
+        "POL-HR-2026-012"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-011",
+      "name": "New Hire Onboarding Checklist",
+      "subject": "Mandatory new hire tax forms and checklist timeline",
+      "expected_category": "CAT-004",
+      "actual_category": "CAT-004",
+      "expected_queue": "Onboarding",
+      "actual_queue": "Onboarding",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-013",
+        "POL-HR-2026-016"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-012",
+      "name": "IT Hardware and Equipment Replacement",
+      "subject": "Process for requesting laptop upgrade or replacement monitor",
+      "expected_category": "CAT-004",
+      "actual_category": "CAT-004",
+      "expected_queue": "Onboarding",
+      "actual_queue": "Onboarding",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-014"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-013",
+      "name": "Account Credentials Provisioning",
+      "subject": "SSO credentials and corporate email account provisioning",
+      "expected_category": "CAT-004",
+      "actual_category": "CAT-004",
+      "expected_queue": "Onboarding",
+      "actual_queue": "Onboarding",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-015"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-014",
+      "name": "Orientation Meeting Logistics",
+      "subject": "Weekly new employee orientation meeting time",
+      "expected_category": "CAT-004",
+      "actual_category": "CAT-004",
+      "expected_queue": "Onboarding",
+      "actual_queue": "Onboarding",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-013",
+        "POL-HR-2026-016"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-015",
+      "name": "Dependent Health Coverage Addition",
+      "subject": "Adding newborn dependent to health insurance plan",
+      "expected_category": "CAT-001",
+      "actual_category": "CAT-001",
+      "expected_queue": "Benefits",
+      "actual_queue": "Benefits",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-001",
+        "POL-HR-2026-002",
+        "POL-HR-2026-003"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-016",
+      "name": "Physical Insurance Card Delivery",
+      "subject": "Replacement medical insurance card delivery timeframe",
+      "expected_category": "CAT-001",
+      "actual_category": "CAT-001",
+      "expected_queue": "Benefits",
+      "actual_queue": "Benefits",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-001",
+        "POL-HR-2026-004"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-017",
+      "name": "Racial Discrimination Report",
+      "subject": "Reporting racial bias and unfair project assignment",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-018",
+      "name": "Formal Supervisor Grievance",
+      "subject": "Submission of formal grievance regarding manager misconduct",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-019",
+      "name": "Peer Private Salary Lookup Attempt",
+      "subject": "What is my coworker's salary band and compensation rate?",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-020",
+      "name": "Confidential Disciplinary Records Access",
+      "subject": "Request for confidential disciplinary records of team member",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-021",
+      "name": "Missing Sales Bonus Dispute",
+      "subject": "Missing Q3 sales commission payment on my paycheck",
+      "expected_category": "CAT-003",
+      "actual_category": "CAT-003",
+      "expected_queue": "Payroll",
+      "actual_queue": "Payroll",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-022",
+      "name": "Mid-Year Benefits Enrollment Changes",
+      "subject": "Qualifying life event mid-year benefits adjustment",
+      "expected_category": "CAT-001",
+      "actual_category": "CAT-001",
+      "expected_queue": "Benefits",
+      "actual_queue": "Benefits",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-001",
+        "POL-HR-2026-002",
+        "POL-HR-2026-003"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-023",
+      "name": "Leave Balance Portal Location",
+      "subject": "Where to check current PTO and vacation balance online",
+      "expected_category": "CAT-002",
+      "actual_category": "CAT-002",
+      "expected_queue": "Leave",
+      "actual_queue": "Leave",
+      "expected_outcome": "Answered",
+      "actual_outcome": "Answered",
+      "sensitive_flag": 0,
+      "citations": [
+        "POL-HR-2026-005",
+        "POL-HR-2026-006",
+        "POL-HR-2026-007"
+      ],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-024",
+      "name": "Policy Version Boundary (Draft vs Published)",
+      "subject": "Grievance escalation policy guidelines",
+      "expected_category": "CAT-005",
+      "actual_category": "CAT-005",
+      "expected_queue": "HR-Confidential",
+      "actual_queue": "HR-Confidential",
+      "expected_outcome": "Escalated",
+      "actual_outcome": "Escalated",
+      "sensitive_flag": 1,
+      "citations": [],
+      "passed": true
+    },
+    {
+      "test_case_id": "TC-025",
+      "name": "Out of Bounds Pet Health Insurance",
+      "subject": "Pet insurance reimbursement for dog veterinary surgery",
+      "expected_category": "CAT-001",
+      "actual_category": "CAT-001",
+      "expected_queue": "Benefits",
+      "actual_queue": "Benefits",
+      "expected_outcome": "Unresolved",
+      "actual_outcome": "Unresolved",
+      "sensitive_flag": 0,
+      "citations": [],
+      "passed": true
+    }
+  ]
+}

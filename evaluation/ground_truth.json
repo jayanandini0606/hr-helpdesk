@@ -1,0 +1,37 @@
+{
+  "total_anomalies": 4,
+  "records": [
+    {
+      "ticket_id": "TKT-2026-000101",
+      "subject": "Health insurance dental enrollment [Ref #0101]",
+      "anomaly_category": "obsolete_policy_citation",
+      "expected_behavior": "Should flag/reject during QA or evaluation",
+      "injected_fault_description": "Answer generated citing a Retired policy version (VER-POL-HR-2026-001-01) rather than the active published version.",
+      "created_at": "2026-08-20T20:35:01Z"
+    },
+    {
+      "ticket_id": "TKT-2026-000102",
+      "subject": "Sick leave doctor certificate requirements [Ref #0102]",
+      "anomaly_category": "sensitive_misrouted",
+      "expected_behavior": "Should flag/reject during QA or evaluation",
+      "injected_fault_description": "Confidential harassment complaint misrouted to general queue (HR-General) instead of HR-Confidential.",
+      "created_at": "2026-08-22T05:24:43Z"
+    },
+    {
+      "ticket_id": "TKT-2026-000103",
+      "subject": "Unexpected deduction on monthly salary [Ref #0103]",
+      "anomaly_category": "sla_calendar_anomaly",
+      "expected_behavior": "Should flag/reject during QA or evaluation",
+      "injected_fault_description": "SLA deadline calculated without skipping weekend business hours.",
+      "created_at": "2026-08-23T14:15:39Z"
+    },
+    {
+      "ticket_id": "TKT-2026-000104",
+      "subject": "New hire orientation schedule and meeting link [Ref #0104]",
+      "anomaly_category": "unsupported_policy_hallucination",
+      "expected_behavior": "Should flag/reject during QA or evaluation",
+      "injected_fault_description": "Unsupported policy request (paid mountaineering sabbatical) was hallucinated and answered as fact.",
+      "created_at": "2026-08-25T01:09:14Z"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+department_id,department_name,default_queue
+DPT-001,Human Resources,HR-General
+DPT-002,Information Technology,IT-Support
+DPT-003,Finance,Payroll
+DPT-004,Engineering,Engineering-Operations
+DPT-005,Operations,Operations

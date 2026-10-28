@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+
+{% block title %}HR Admin Dashboard{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
+      📊 HR Helpdesk Administration & SLA Dashboard
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+      Real-time queue monitoring, sensitive case protection, and SLA compliance tracking.
+    </p>
+  </div>
+
+  <!-- Demo Actions Toolbar -->
+  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+    <form action="{{ url_for('seed_demo_route') }}" method="POST">
+      <button type="submit" class="btn btn-primary" title="Seeds the 6 core interview demo scenarios required by the challenge">
+        ⚡ Seed 6 Demo Scenarios
+      </button>
+    </form>
+
+    <form action="{{ url_for('reset_db_route') }}" method="POST" onsubmit="return confirm('Reset and re-generate master database deterministically?');">
+      <button type="submit" class="btn btn-secondary" title="Clears and re-seeds synthetic departments, 100 employees, policies and articles">
+        🔄 Reset Master DB
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- KPI Metrics Grid -->
+<div class="stat-grid">
+  <div class="stat-card">
+    <span class="stat-label">Total Tickets</span>
+    <span class="stat-value">{{ metrics.total_tickets }}</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Sensitive Cases</span>
+    <span class="stat-value" style="color: var(--danger);">{{ metrics.sensitive_count }}</span>
+    <span class="stat-badge badge badge-sensitive">Confidential Guardrails</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Escalated to Human</span>
+    <span class="stat-value" style="color: var(--warning);">{{ metrics.escalated_count }}</span>
+    <span class="stat-badge badge badge-awaiting">Specialist Queue</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Overdue SLAs</span>
+    <span class="stat-value" style="color: {% if metrics.overdue_count > 0 %}var(--danger){% else %}var(--success){% endif %};">
+      {{ metrics.overdue_count }}
+    </span>
+    <span class="stat-badge badge {% if metrics.overdue_count > 0 %}badge-overdue{% else %}badge-resolved{% endif %}">
+      {% if metrics.overdue_count > 0 %}Immediate Action Required{% else %}All SLAs Healthy{% endif %}
+    </span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">SLA Compliance Rate</span>
+    <span class="stat-value" style="color: var(--primary);">{{ metrics.sla_compliance_rate }}%</span>
+    <span class="stat-badge" style="font-size: 0.75rem; color: var(--text-muted);">Resolved within Target</span>
+  </div>
+</div>
+
+<!-- Filter & Search Toolbar -->
+<div class="card" style="padding: 1.25rem;">
+  <form action="{{ url_for('admin_dashboard') }}" method="GET" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Status</label>
+      <select name="status" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Statuses</option>
+        {% for st in ['Open', 'In_Progress', 'Awaiting_Employee', 'Resolved', 'Closed'] %}
+          <option value="{{ st }}" {% if filters.status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Category</label>
+      <select name="category_id" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Categories</option>
+        {% for cat in categories_list %}
+          <option value="{{ cat[0] }}" {% if filters.category_id == cat[0] %}selected{% endif %}>{{ cat[1] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Priority</label>
+      <select name="priority" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Priorities</option>
+        {% for p in ['Critical', 'High', 'Medium', 'Low'] %}
+          <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Queue</label>
+      <select name="queue" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Queues</option>
+        {% for q in available_queues %}
+          <option value="{{ q }}" {% if filters.assigned_queue == q %}selected{% endif %}>{{ q }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Sensitivity</label>
+      <select name="sensitive" class="form-control" style="padding: 0.45rem;">
+        <option value="">All</option>
+        <option value="1" {% if filters.sensitive_flag == 1 %}selected{% endif %}>🔒 Sensitive Only</option>
+        <option value="0" {% if filters.sensitive_flag == 0 %}selected{% endif %}>Standard Only</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Anomaly / QA Case</label>
+      <select name="issue_type" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Cases</option>
+        <option value="Standard" {% if filters.issue_type == 'Standard' %}selected{% endif %}>Standard Cases</option>
+        <option value="obsolete_policy_citation" {% if filters.issue_type == 'obsolete_policy_citation' %}selected{% endif %}>⚠️ Obsolete Policy Citation</option>
+        <option value="sensitive_misrouted" {% if filters.issue_type == 'sensitive_misrouted' %}selected{% endif %}>⚠️ Misrouted Sensitive</option>
+        <option value="sla_calendar_anomaly" {% if filters.issue_type == 'sla_calendar_anomaly' %}selected{% endif %}>⚠️ SLA Calendar Anomaly</option>
+        <option value="unsupported_policy_hallucination" {% if filters.issue_type == 'unsupported_policy_hallucination' %}selected{% endif %}>⚠️ Unsupported Claim</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Search Query</label>
+      <input type="text" name="search" class="form-control" placeholder="Search ticket or employee..." style="padding: 0.45rem;" value="{{ filters.search or '' }}">
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; flex: 1;">Filter</button>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.75rem;" title="Reset filters">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Tickets List Table -->
+<div class="card">
+  <div class="card-title">
+    <span>Operational Tickets</span>
+    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
+      Showing {{ tickets|length }} ticket(s)
+    </span>
+  </div>
+
+  {% if tickets %}
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Ticket ID</th>
+            <th>Employee</th>
+            <th>Subject</th>
+            <th>Category</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Assigned Queue</th>
+            <th>SLA Status</th>
+            <th>Age</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in tickets %}
+            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}">
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
+                  {{ t.ticket_id }}
+                </a>
+              </td>
+              <td>
+                <span style="font-weight: 500;">{{ t.employee_name }}</span>
+                <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">{{ t.employee_id }}</span>
+              </td>
+              <td>
+                <span style="font-weight: 500;">{{ t.subject }}</span>
+                {% if t.sensitive_flag == 1 %}
+                  <span class="badge badge-sensitive" style="margin-left: 0.25rem;">🔒 Sensitive</span>
+                {% endif %}
+                {% if t.issue_type and t.issue_type != 'Standard' %}
+                  <span class="badge badge-priority-critical" style="margin-left: 0.25rem; font-size: 0.7rem;" title="Deliberate Injected Anomaly">
+                    ⚠️ {{ t.issue_type }}
+                  </span>
+                {% endif %}
+              </td>
+              <td>{{ t.category_name }}</td>
+              <td><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
+              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
+              <td>
+                <span class="badge badge-default" style="background: #e2e8f0; color: #334155; font-weight: 600;">
+                  {{ t.assigned_queue or "Unassigned" }}
+                </span>
+              </td>
+              <td>
+                {% if t.is_overdue %}
+                  <span class="badge badge-overdue">⚠️ OVERDUE</span>
+                {% elif t.resolution_met == 1 %}
+                  <span class="badge badge-resolved">Met Target</span>
+                {% elif t.status in ('Resolved', 'Closed') %}
+                  <span class="badge badge-priority-critical">Breached</span>
+                {% else %}
+                  <span class="badge badge-open">On Schedule</span>
+                {% endif %}
+              </td>
+              <td style="color: var(--text-muted); font-size: 0.85rem;">{{ t.age }}</td>
+              <td>
+                <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn btn-secondary btn-sm">
+                  Review &rarr;
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div style="text-align: center; padding: 2.5rem 1rem;">
+      <p style="color: var(--text-muted); margin-bottom: 1rem;">No tickets match the selected filters.</p>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary btn-sm">Clear Filters</a>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Secondary Analytics: Breakdown by Queue & Category -->
+<div class="layout-split">
+  <div class="card">
+    <div class="card-title" style="font-size: 1rem;">
+      <span>📥 Active Queue Workload</span>
+    </div>
+    {% if metrics.queue_distribution %}
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for q in metrics.queue_distribution %}
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 0.25rem;">
+              <strong>{{ q.assigned_queue }}</strong>
+              <span>{{ q.count }} ticket(s)</span>
+            </div>
+            <div style="background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="background: var(--primary); height: 100%; width: {{ (q.count / (metrics.total_tickets or 1) * 100)|round }}%;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--text-muted); font-size: 0.85rem;">No assignments currently logged.</p>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-title" style="font-size: 1rem;">
+      <span>📂 Category Volume</span>
+    </div>
+    {% if metrics.category_distribution %}
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for c in metrics.category_distribution %}
+          <div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.88rem; margin-bottom: 0.25rem;">
+              <strong>{{ c.category_name }}</strong>
+              <span>{{ c.count }} ticket(s)</span>
+            </div>
+            <div style="background: #f1f5f9; height: 8px; border-radius: 4px; overflow: hidden;">
+              <div style="background: var(--purple); height: 100%; width: {{ (c.count / (metrics.total_tickets or 1) * 100)|round }}%;"></div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

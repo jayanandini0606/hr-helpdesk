@@ -1,0 +1,6 @@
+category_id,category_name,default_queue,priority
+CAT-001,Benefits,Benefits,Medium
+CAT-002,Leave,Leave,Medium
+CAT-003,Payroll,Payroll,High
+CAT-004,Onboarding,Onboarding,Medium
+CAT-005,Employee Relations,HR-Confidential,High
