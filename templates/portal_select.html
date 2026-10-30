@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Select Portal — Enterprise HR Helpdesk{% endblock %}
+
+{% block content %}
+<div class="portal-hero">
+  <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: #e0f2fe; color: #0369a1; padding: 0.35rem 0.85rem; border-radius: 9999px; font-size: 0.82rem; font-weight: 600; margin-bottom: 1rem;">
+    <span>⚡ Role-Based Access Control Enabled</span>
+  </div>
+  <h1>Enterprise HR Helpdesk</h1>
+  <p>
+    Welcome to the next-generation AI-powered HR Helpdesk. Choose your portal below to access self-service employee tools or enterprise HR administration and SLA monitoring.
+  </p>
+</div>
+
+<div class="portal-cards-grid">
+  <!-- Employee Portal Card -->
+  <div class="portal-card">
+    <div class="portal-card-header employee-header">
+      <div class="portal-card-icon">👤</div>
+      <div class="portal-card-title">
+        Employee Portal
+        <span class="role-tag role-tag-employee">Self-Service</span>
+      </div>
+      <div class="portal-card-subtitle">
+        Personal workspace for employees to resolve inquiries and track tickets.
+      </div>
+    </div>
+
+    <div class="portal-card-body">
+      <ul class="portal-feature-list">
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Personal Dashboard:</strong> Access your active and historical tickets with personal isolation.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Submit New Requests:</strong> Instant intake across Benefits, Leave, Payroll, and Onboarding.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Track Ticket Status:</strong> Real-time progress updates and SLA stage visibility.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>AI Answers & Citations:</strong> Grounded responses referencing verified company policies.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Clarification Replies:</strong> Securely provide required information directly on ticket threads.</span>
+        </li>
+      </ul>
+
+      <form action="{{ url_for('portal_select_route') }}" method="POST" style="margin-top: auto;">
+        <input type="hidden" name="role" value="Employee">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-size: 0.85rem; color: var(--text-muted);">Select Employee Identity:</label>
+          <select name="user_id" class="form-control" style="font-size: 0.88rem;">
+            {% for emp in employee_options %}
+              <option value="{{ emp.employee_id }}" {% if current_user.employee_id == emp.employee_id %}selected{% endif %}>
+                {{ emp.full_name }} ({{ emp.employee_id }}) — {{ emp.department_name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem 1rem; font-weight: 600;">
+          Enter Employee Portal &rarr;
+        </button>
+      </form>
+    </div>
+
+    <div class="portal-card-footer">
+      <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem;">
+        <span>🔒</span>
+        <span>Ticket isolation enforced: employees can only view their own cases.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- HR / Admin Portal Card -->
+  <div class="portal-card">
+    <div class="portal-card-header admin-header">
+      <div class="portal-card-icon">🛡️</div>
+      <div class="portal-card-title">
+        HR / Admin Portal
+        <span class="role-tag role-tag-admin">Operations</span>
+      </div>
+      <div class="portal-card-subtitle">
+        Operations console for HR Partners, Specialists, and System Administrators.
+      </div>
+    </div>
+
+    <div class="portal-card-body">
+      <ul class="portal-feature-list">
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Helpdesk Dashboard:</strong> Real-time queue volume, metrics, and operational overview.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Sensitive & Escalated Cases:</strong> Dedicated confidential review queues with strict privacy.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Ticket Lifecycle Control:</strong> Update ticket statuses and record formal resolution outcomes.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Queue Reassignment:</strong> Route tickets across HR, Benefits, Payroll, IT, or Confidential.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>SLA & Overdue Breach Tracking:</strong> Response and resolution deadline compliance monitoring.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Policy & Knowledge Hub:</strong> Manage versioned policies, effective dates, and published articles.</span>
+        </li>
+        <li class="portal-feature-item">
+          <span class="icon">✓</span>
+          <span><strong>Confidential Internal Notes:</strong> Private staff notes hidden from employee-facing views.</span>
+        </li>
+      </ul>
+
+      <form action="{{ url_for('portal_select_route') }}" method="POST" style="margin-top: auto;">
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label class="form-label" style="font-size: 0.85rem; color: var(--text-muted);">Select Staff Role & Persona:</label>
+          <select name="role_and_user" class="form-control" style="font-size: 0.88rem;">
+            <option value="HR Partner|EMP-000001" {% if current_user.role == 'HR Partner' %}selected{% endif %}>
+              HR Partner — Aarav Sharma (EMP-000001, HR)
+            </option>
+            <option value="IT/Operations Partner|EMP-000002" {% if current_user.role == 'IT/Operations Partner' %}selected{% endif %}>
+              IT/Operations Partner — Aditi Sharma (EMP-000002, IT)
+            </option>
+            <option value="Admin|EMP-000001" {% if current_user.role == 'Admin' %}selected{% endif %}>
+              System Administrator — Lead Admin (EMP-000001, Admin)
+            </option>
+          </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem 1rem; font-weight: 600; background: #4f46e5; border-color: #4338ca;">
+          Enter HR / Admin Portal &rarr;
+        </button>
+      </form>
+    </div>
+
+    <div class="portal-card-footer">
+      <div style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.4rem;">
+        <span>🛡️</span>
+        <span>Includes full queue access, policy governance, and internal audit logs.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Demo Switcher Section -->
+<div class="card" style="max-width: 1050px; margin: 1.5rem auto; text-align: center; background: #f8fafc;">
+  <div style="font-size: 0.88rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.75rem;">
+    ⚡ 1-Click Demo Quick Presets (Ideal for Hackathon Evaluation):
+  </div>
+  <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
+    <form action="{{ url_for('portal_select_route') }}" method="POST" style="display: inline;">
+      <input type="hidden" name="role" value="Employee">
+      <input type="hidden" name="user_id" value="EMP-000006">
+      <button type="submit" class="btn btn-secondary btn-sm" style="background: white;">
+        👤 Employee: Ishaan Sharma (EMP-000006)
+      </button>
+    </form>
+    <form action="{{ url_for('portal_select_route') }}" method="POST" style="display: inline;">
+      <input type="hidden" name="role" value="Employee">
+      <input type="hidden" name="user_id" value="EMP-000007">
+      <button type="submit" class="btn btn-secondary btn-sm" style="background: white;">
+        👤 Employee: Kavya Sharma (EMP-000007)
+      </button>
+    </form>
+    <form action="{{ url_for('portal_select_route') }}" method="POST" style="display: inline;">
+      <input type="hidden" name="role" value="HR Partner">
+      <input type="hidden" name="user_id" value="EMP-000001">
+      <button type="submit" class="btn btn-secondary btn-sm" style="background: white; border-color: #86efac;">
+        👔 HR Partner: Aarav Sharma (EMP-000001)
+      </button>
+    </form>
+    <form action="{{ url_for('portal_select_route') }}" method="POST" style="display: inline;">
+      <input type="hidden" name="role" value="IT/Operations Partner">
+      <input type="hidden" name="user_id" value="EMP-000002">
+      <button type="submit" class="btn btn-secondary btn-sm" style="background: white; border-color: #fde047;">
+        💻 IT Partner: Aditi Sharma (EMP-000002)
+      </button>
+    </form>
+    <form action="{{ url_for('portal_select_route') }}" method="POST" style="display: inline;">
+      <input type="hidden" name="role" value="Admin">
+      <input type="hidden" name="user_id" value="EMP-000001">
+      <button type="submit" class="btn btn-secondary btn-sm" style="background: white; border-color: #c4b5fd;">
+        ⚡ Administrator (Full Access)
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,13 +1,18 @@
 """
 AI-Powered HR Helpdesk — Flask Application.
-Provides employee self-service portal, HR admin dashboard,
-grounded policy management, SLA tracking, and ticket workflow lifecycle.
+Provides role-based interfaces with separate Employee and HR/Admin portals,
+grounded policy retrieval, SLA tracking, sensitive case routing, and audit trails.
 """
 
 import os
+from functools import wraps
 from datetime import datetime, timezone
 from pathlib import Path
-from flask import Flask, render_template, request, redirect, url_for, flash, session, abort, jsonify
+from typing import Dict, Any
+from flask import (
+    Flask, render_template, request, redirect, url_for,
+    flash, session, abort, jsonify
+)
 
 from src.database import query_all, query_one, get_db_path
 from src.ticket_service import (
@@ -26,6 +31,55 @@ app = Flask(
     static_folder=str(PROJECT_ROOT / "static")
 )
 app.secret_key = os.getenv("SECRET_KEY", "yottaflex-fde-demo-secret-key-2026")
+
+
+# --------------------------------------------------
+# User Session & RBAC Helpers
+# --------------------------------------------------
+
+def get_current_user() -> Dict[str, Any]:
+    """Retrieves current session identity and employee master data."""
+    role = session.get("role", "Employee")
+    user_id = session.get("user_id") or session.get("employee_id", "EMP-000006")
+
+    emp = query_one("""
+        SELECT e.*, d.department_name
+        FROM Employee e
+        LEFT JOIN Department d ON e.department_id = d.department_id
+        WHERE e.employee_id = ?
+    """, (user_id,))
+
+    if not emp:
+        emp = {
+            "employee_id": user_id,
+            "full_name": "Ishaan Sharma 006",
+            "department_id": "DPT-001",
+            "department_name": "Human Resources",
+            "employment_status": "Active",
+            "audience": "Employee"
+        }
+
+    # Synchronize session keys
+    session["role"] = role
+    session["user_id"] = user_id
+    session["employee_id"] = user_id
+
+    return {
+        **emp,
+        "role": role
+    }
+
+
+def admin_required(f):
+    """Restricts route to authorized HR Partner, IT Partner, or Admin roles."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        current_user = get_current_user()
+        if current_user.get("role") == "Employee":
+            flash("Access Denied: Administrative privileges required. Redirected to Employee Portal.", "error")
+            return redirect(url_for("employee_home"))
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 # --------------------------------------------------
@@ -69,21 +123,19 @@ def priority_badge_filter(priority: str) -> str:
 
 @app.context_processor
 def inject_global_data():
-    current_emp_id = session.get("employee_id", "EMP-000006")
-    current_emp = query_one(
-        "SELECT * FROM Employee WHERE employee_id = ?",
-        (current_emp_id,)
-    ) or {"employee_id": "EMP-000006", "full_name": "Aditi Reddy 006", "audience": "Employee"}
+    current_user = get_current_user()
 
     employees = query_all("""
-        SELECT employee_id, full_name, audience, department_id
-        FROM Employee
-        ORDER BY employee_id ASC
-        LIMIT 25
+        SELECT e.employee_id, e.full_name, e.audience, e.department_id, d.department_name
+        FROM Employee e
+        LEFT JOIN Department d ON e.department_id = d.department_id
+        ORDER BY e.employee_id ASC
+        LIMIT 30
     """)
 
     return {
-        "current_employee": current_emp,
+        "current_user": current_user,
+        "current_employee": current_user,
         "demo_employees": employees,
         "categories_list": CATEGORIES,
         "now_iso": get_current_iso_time()
@@ -91,53 +143,144 @@ def inject_global_data():
 
 
 # --------------------------------------------------
-# Routes: Portal & Employee Experience
+# Routes: Landing & Role Selection
 # --------------------------------------------------
 
 @app.route("/")
 def index():
-    return redirect(url_for("employee_home"))
+    """Landing route: redirects active sessions to portal, or to role selector."""
+    if "role" not in session:
+        return redirect(url_for("portal_select_route"))
+    if session.get("role") == "Employee":
+        return redirect(url_for("employee_home"))
+    return redirect(url_for("admin_dashboard"))
 
+
+@app.route("/portal-select")
+@app.route("/login", methods=["GET", "POST"])
+def portal_select_route():
+    """Role selection & login landing page with separate Employee and HR/Admin options."""
+    if request.method == "POST":
+        role = request.form.get("role")
+        user_id = request.form.get("user_id")
+        role_and_user = request.form.get("role_and_user")
+
+        if role_and_user:
+            parts = role_and_user.split("|")
+            if len(parts) == 2:
+                role = parts[0]
+                user_id = parts[1]
+
+        role = role or "Employee"
+        user_id = user_id or "EMP-000006"
+
+        session["role"] = role
+        session["user_id"] = user_id
+        session["employee_id"] = user_id
+
+        flash(f"Entered as {role} ({user_id}).", "success")
+        if role == "Employee":
+            return redirect(url_for("employee_home"))
+        else:
+            return redirect(url_for("admin_dashboard"))
+
+    # GET: render landing page
+    current_user = get_current_user()
+    employee_options = query_all("""
+        SELECT e.employee_id, e.full_name, e.department_id, d.department_name
+        FROM Employee e
+        LEFT JOIN Department d ON e.department_id = d.department_id
+        ORDER BY e.employee_id ASC
+        LIMIT 30
+    """)
+    return render_template(
+        "portal_select.html",
+        employee_options=employee_options,
+        current_user=current_user
+    )
+
+
+@app.route("/logout")
+def logout_route():
+    """Clears active session and returns to portal selection landing page."""
+    session.clear()
+    flash("You have been signed out of your portal session.", "info")
+    return redirect(url_for("portal_select_route"))
+
+
+@app.route("/employee/select", methods=["POST"])
+def select_employee():
+    """Demo switcher to quickly change active employee identity."""
+    emp_id = request.form.get("employee_id")
+    if emp_id:
+        session["user_id"] = emp_id
+        session["employee_id"] = emp_id
+        flash(f"Switched active demo employee to {emp_id}.", "info")
+    return redirect(request.referrer or url_for("employee_home"))
+
+
+# --------------------------------------------------
+# Routes: Employee Portal Experience
+# --------------------------------------------------
 
 @app.route("/employee")
 def employee_home():
-    emp_id = session.get("employee_id", "EMP-000006")
+    """Employee Portal Dashboard: personalized metrics, filterable ticket list."""
+    current_user = get_current_user()
+    emp_id = current_user["employee_id"]
+
     employee = query_one("""
         SELECT e.*, d.department_name
         FROM Employee e
-        JOIN Department d ON e.department_id = d.department_id
+        LEFT JOIN Department d ON e.department_id = d.department_id
         WHERE e.employee_id = ?
     """, (emp_id,))
 
-    tickets = list_tickets(filters={"employee_id": emp_id})
+    # Parse search and filter parameters
+    status = request.args.get("status")
+    category_id = request.args.get("category_id")
+    priority = request.args.get("priority")
+    search = request.args.get("search")
 
-    # Stats for current employee
-    total_tickets = len(tickets)
-    resolved_tickets = sum(1 for t in tickets if t["status"] in ("Resolved", "Closed"))
-    in_progress_tickets = sum(1 for t in tickets if t["status"] in ("Open", "In_Progress", "Awaiting_Employee"))
+    filters = {"employee_id": emp_id}
+    filter_inputs = {}
+    if status:
+        filters["status"] = status
+        filter_inputs["status"] = status
+    if category_id:
+        filters["category_id"] = category_id
+        filter_inputs["category_id"] = category_id
+    if priority:
+        filters["priority"] = priority
+        filter_inputs["priority"] = priority
+    if search:
+        filters["search"] = search
+        filter_inputs["search"] = search
+
+    tickets = list_tickets(filters=filters)
+
+    # Aggregate stats for this specific employee across all their tickets
+    all_emp_tickets = list_tickets(filters={"employee_id": emp_id, "limit": 1000})
+    total_tickets = len(all_emp_tickets)
+    resolved_tickets = sum(1 for t in all_emp_tickets if t["status"] in ("Resolved", "Closed"))
+    open_tickets = sum(1 for t in all_emp_tickets if t["status"] in ("Open", "In_Progress", "Awaiting_Employee"))
 
     return render_template(
         "employee_home.html",
         employee=employee,
         tickets=tickets,
         total_tickets=total_tickets,
+        open_tickets=open_tickets,
         resolved_tickets=resolved_tickets,
-        in_progress_tickets=in_progress_tickets
+        filters=filter_inputs
     )
-
-
-@app.route("/employee/select", methods=["POST"])
-def select_employee():
-    emp_id = request.form.get("employee_id")
-    if emp_id:
-        session["employee_id"] = emp_id
-        flash(f"Switched active demo employee to {emp_id}.", "info")
-    return redirect(request.referrer or url_for("employee_home"))
 
 
 @app.route("/tickets/new", methods=["GET", "POST"])
 def new_ticket():
-    emp_id = session.get("employee_id", "EMP-000006")
+    """Ticket intake: saves ticket, classifies, checks sensitive rules, grounds answer, routes."""
+    current_user = get_current_user()
+    emp_id = current_user["employee_id"]
 
     if request.method == "POST":
         subject = request.form.get("subject", "").strip()
@@ -168,18 +311,48 @@ def new_ticket():
     return render_template("new_ticket.html")
 
 
+# --------------------------------------------------
+# Routes: Ticket Detail & Message Lifecycle
+# --------------------------------------------------
+
 @app.route("/tickets/<ticket_id>")
 def ticket_detail(ticket_id: str):
+    """Detailed view of ticket, conversation, policy citations, SLA, and audit events."""
     ticket_bundle = get_ticket(ticket_id)
     if not ticket_bundle:
         abort(404, description=f"Ticket {ticket_id} was not found.")
+
+    current_user = get_current_user()
+
+    # Strict isolation: Employees can only view tickets they personally submitted
+    if current_user.get("role") == "Employee":
+        if ticket_bundle["ticket"]["employee_id"] != current_user["employee_id"]:
+            flash(f"Access Denied: Ticket {ticket_id} belongs to another employee. You can only view your own submitted requests.", "error")
+            return redirect(url_for("employee_home"))
+
+    # Process messages: strictly hide internal notes from employee portal
+    raw_messages = ticket_bundle["messages"]
+    processed_messages = []
+    for msg in raw_messages:
+        text = msg.get("message_text", "")
+        is_internal = text.startswith("[INTERNAL NOTE]")
+
+        # Employees must never see internal staff notes
+        if current_user.get("role") == "Employee" and is_internal:
+            continue
+
+        clean_text = text.replace("[INTERNAL NOTE]", "").strip() if is_internal else text
+        msg_dict = dict(msg)
+        msg_dict["is_internal_note"] = is_internal
+        msg_dict["clean_text"] = clean_text
+        processed_messages.append(msg_dict)
 
     queues = ["Benefits", "Leave", "Payroll", "Onboarding", "HR-Confidential", "IT-Support", "HR-General"]
 
     return render_template(
         "ticket_detail.html",
         ticket=ticket_bundle["ticket"],
-        messages=ticket_bundle["messages"],
+        messages=processed_messages,
         assignments=ticket_bundle["assignments"],
         current_assignment=ticket_bundle["current_assignment"],
         citations=ticket_bundle["citations"],
@@ -194,22 +367,50 @@ def ticket_detail(ticket_id: str):
 
 @app.route("/tickets/<ticket_id>/message", methods=["POST"])
 def post_ticket_message(ticket_id: str):
-    sender_type = request.form.get("sender_type", "Employee")
-    message_text = request.form.get("message_text", "").strip()
-    message_type = request.form.get("message_type", "Clarification")
+    """Appends conversation message or confidential internal note."""
+    ticket_bundle = get_ticket(ticket_id)
+    if not ticket_bundle:
+        abort(404, description=f"Ticket {ticket_id} was not found.")
 
+    current_user = get_current_user()
+
+    # Employee ticket ownership verification
+    if current_user.get("role") == "Employee":
+        if ticket_bundle["ticket"]["employee_id"] != current_user["employee_id"]:
+            flash("Access Denied: You cannot message on another employee's ticket.", "error")
+            return redirect(url_for("employee_home"))
+
+    message_text = request.form.get("message_text", "").strip()
     if not message_text:
         flash("Message content cannot be blank.", "error")
         return redirect(url_for("ticket_detail", ticket_id=ticket_id))
+
+    is_internal_note = request.form.get("is_internal_note", "0") == "1"
+
+    if current_user.get("role") == "Employee":
+        sender_type = "Employee"
+        message_type = "Clarification"
+        final_text = message_text
+    else:
+        # HR / Admin staff
+        sender_type = "HR"
+        message_type = "Clarification"
+        if is_internal_note:
+            final_text = f"[INTERNAL NOTE] {message_text}"
+        else:
+            final_text = message_text
 
     try:
         add_ticket_message(
             ticket_id=ticket_id,
             sender_type=sender_type,
-            message_text=message_text,
+            message_text=final_text,
             message_type=message_type
         )
-        flash("Message added to conversation.", "success")
+        if is_internal_note:
+            flash("Confidential internal note saved. (Hidden from employee portal)", "info")
+        else:
+            flash("Message added to conversation.", "success")
     except Exception as e:
         flash(f"Failed to post message: {str(e)}", "error")
 
@@ -217,7 +418,9 @@ def post_ticket_message(ticket_id: str):
 
 
 @app.route("/tickets/<ticket_id>/reassign", methods=["POST"])
+@admin_required
 def admin_reassign(ticket_id: str):
+    """Reassigns ticket queue and updates assignment history."""
     new_queue = request.form.get("new_queue", "").strip()
     new_assignee = request.form.get("new_assignee", "").strip() or None
     reason = request.form.get("reason", "").strip() or "Reassigned via admin console"
@@ -236,7 +439,9 @@ def admin_reassign(ticket_id: str):
 
 
 @app.route("/tickets/<ticket_id>/status", methods=["POST"])
+@admin_required
 def admin_status(ticket_id: str):
+    """Updates ticket status, records outcome and resolution summary."""
     new_status = request.form.get("status", "").strip()
     reason = request.form.get("reason", "").strip() or "Status updated via admin console"
     outcome = request.form.get("outcome", "").strip() or None
@@ -262,8 +467,9 @@ def admin_status(ticket_id: str):
 # --------------------------------------------------
 
 @app.route("/admin")
+@admin_required
 def admin_dashboard():
-    # Filter parameters
+    """HR / Admin operations dashboard with KPI metrics, filters, and ticket table."""
     status = request.args.get("status")
     category_id = request.args.get("category_id")
     priority = request.args.get("priority")
@@ -308,6 +514,7 @@ def admin_dashboard():
 
 @app.route("/policies")
 def policy_list():
+    """Versioned policy documents, effective dates, and published knowledge articles."""
     as_of_date = request.args.get("as_of_date")
     policies = get_all_policies_summary(as_of_date=as_of_date)
     return render_template(
@@ -322,6 +529,7 @@ def policy_list():
 # --------------------------------------------------
 
 @app.route("/admin/seed-demo", methods=["POST"])
+@admin_required
 def seed_demo_route():
     try:
         results = seed_demo_scenarios()
@@ -332,6 +540,7 @@ def seed_demo_route():
 
 
 @app.route("/admin/reset-db", methods=["POST"])
+@admin_required
 def reset_db_route():
     try:
         generate_master_data()
@@ -344,6 +553,11 @@ def reset_db_route():
 # --------------------------------------------------
 # Error Handlers
 # --------------------------------------------------
+
+@app.errorhandler(403)
+def forbidden_error(error):
+    return render_template("base.html", error_message="Access Denied (403): You do not have permission to view this resource."), 403
+
 
 @app.errorhandler(404)
 def not_found_error(error):

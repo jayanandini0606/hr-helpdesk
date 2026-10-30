@@ -3,19 +3,30 @@
 {% block title %}Ticket {{ ticket.ticket_id }} — {{ ticket.subject }}{% endblock %}
 
 {% block content %}
+<!-- Top Navigation Breadcrumbs -->
 <div style="margin-bottom: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-  <a href="{{ url_for('employee_home') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
-    &larr; Back to Requests
-  </a>
-  <span style="font-size: 0.85rem; color: var(--text-muted);">
-    Ticket Age: <strong>{{ ticket_age }}</strong> &bull; Created: <strong>{{ ticket.created_at|format_dt }}</strong>
-  </span>
+  <div>
+    {% if current_user.role == 'Employee' %}
+      <a href="{{ url_for('employee_home') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+        &larr; Back to My Requests
+      </a>
+    {% else %}
+      <a href="{{ url_for('admin_dashboard') }}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;">
+        &larr; Back to HR Admin Dashboard
+      </a>
+    {% endif %}
+  </div>
+  <div style="font-size: 0.85rem; color: var(--text-muted);">
+    Viewing as: <strong>{{ current_user.role }}</strong> &bull;
+    Ticket Age: <strong>{{ ticket_age }}</strong> &bull;
+    Created: <strong>{{ ticket.created_at|format_dt }}</strong>
+  </div>
 </div>
 
 <!-- Header Card -->
 <div class="card" style="margin-bottom: 1.5rem;">
   <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-    <div>
+    <div style="flex: 1;">
       <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
         <span style="font-size: 1.25rem; font-weight: 700; color: var(--text-main);">
           {{ ticket.ticket_id }}
@@ -42,7 +53,11 @@
         {{ ticket.subject }}
       </h2>
       <div style="font-size: 0.88rem; color: var(--text-muted);">
-        Requested by: <strong>{{ ticket.employee_name }}</strong> ({{ ticket.employee_id }}) &bull; Current Queue: <span class="badge badge-default" style="background: #dbeafe; color: #1e40af; font-weight: 600;">{{ current_assignment.assigned_queue if current_assignment else ticket.category_queue }}</span>
+        Requested by: <strong>{{ ticket.employee_name }}</strong> ({{ ticket.employee_id }}) &bull;
+        Assigned Queue: <span class="badge badge-default" style="background: #dbeafe; color: #1e40af; font-weight: 600;">{{ current_assignment.assigned_queue if current_assignment else ticket.category_queue }}</span>
+        {% if current_assignment and current_assignment.assigned_to %}
+          &bull; Assignee: <strong>{{ current_assignment.assigned_to }}</strong>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -51,38 +66,98 @@
 <div class="layout-split">
   <!-- Left Column: Messages & Citations -->
   <div>
+    <!-- HR / Authorized Staff Only: Restricted Employee Profile -->
+    {% if current_user.role != 'Employee' %}
+      <div class="restricted-employee-box">
+        <div class="header">
+          <span style="font-size: 0.85rem; font-weight: 700; color: #0f172a; display: flex; align-items: center; gap: 0.4rem;">
+            <span>🔒 Restricted Staff View: Employee Information</span>
+            <span class="badge badge-internal-note" style="font-size: 0.65rem;">Authorized HR/Admin Only</span>
+          </span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">Confidential Master Data</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; font-size: 0.85rem;">
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Full Name:</span>
+            <strong>{{ ticket.employee_name }}</strong>
+          </div>
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Employee ID:</span>
+            <code>{{ ticket.employee_id }}</code>
+          </div>
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Department:</span>
+            <span>{{ ticket.department_name or ticket.employee_department or "Human Resources" }}</span>
+          </div>
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Employment Status:</span>
+            <span class="badge badge-resolved" style="font-size: 0.7rem;">{{ ticket.employment_status or "Active" }}</span>
+          </div>
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">Manager ID:</span>
+            <span>{{ ticket.manager_id or "None (Department Head)" }}</span>
+          </div>
+          <div>
+            <span style="color: var(--text-muted); display: block; font-size: 0.75rem;">System Audience:</span>
+            <span>{{ ticket.employee_audience or "Employee" }}</span>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+
     <!-- Conversation Messages -->
     <div class="card">
       <div class="card-title">
         <span>💬 Conversation & Case History</span>
         <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
-          {{ messages|length }} message(s)
+          {{ messages|length }} visible message(s)
         </span>
       </div>
 
       <div class="conversation-timeline">
         {% for msg in messages %}
-          <div class="message-box {% if msg.sender_type == 'Assistant' %}{% if ticket.sensitive_flag == 1 %}message-escalation{% else %}message-assistant{% endif %}{% endif %}">
-            <div class="message-header">
-              <span class="message-sender">
-                {% if msg.sender_type == 'Employee' %}
-                  👤 {{ ticket.employee_name }} (Employee)
-                {% elif msg.sender_type == 'Assistant' %}
-                  🤖 AI Helpdesk Assistant
-                {% elif msg.sender_type == 'HR' %}
-                  👔 HR Partner Specialist
-                {% else %}
-                  ⚙️ System Event
-                {% endif %}
-                <span class="badge badge-default" style="font-size: 0.7rem; background: #e2e8f0;">{{ msg.message_type }}</span>
-              </span>
-              <span class="message-time">#{{ msg.sequence_number }} &bull; {{ msg.created_at|format_dt }}</span>
+          {% if msg.is_internal_note %}
+            <!-- Confidential Internal Note (Only visible to HR / Admin) -->
+            <div class="message-box message-internal-note">
+              <div class="message-header">
+                <span class="message-sender">
+                  <span>🔒</span>
+                  <span class="badge badge-internal-note">CONFIDENTIAL INTERNAL NOTE</span>
+                  <span style="color: #854d0e; font-weight: 600;">Staff Investigation Detail</span>
+                </span>
+                <span class="message-time">#{{ msg.sequence_number }} &bull; {{ msg.created_at|format_dt }}</span>
+              </div>
+              <div style="font-size: 0.78rem; color: #a16207; margin-bottom: 0.5rem; font-weight: 500;">
+                ⚠️ This note is strictly internal. It is never displayed in the employee portal.
+              </div>
+              <div style="white-space: pre-line; font-size: 0.93rem; line-height: 1.5; color: #713f12;">
+                {{ msg.clean_text }}
+              </div>
             </div>
+          {% else %}
+            <!-- Standard Public Conversation Message -->
+            <div class="message-box {% if msg.sender_type == 'Assistant' %}{% if ticket.sensitive_flag == 1 %}message-escalation{% else %}message-assistant{% endif %}{% endif %}">
+              <div class="message-header">
+                <span class="message-sender">
+                  {% if msg.sender_type == 'Employee' %}
+                    👤 {{ ticket.employee_name }} (Employee)
+                  {% elif msg.sender_type == 'Assistant' %}
+                    🤖 AI Helpdesk Assistant
+                  {% elif msg.sender_type == 'HR' %}
+                    👔 HR Partner Specialist
+                  {% else %}
+                    ⚙️ System Event
+                  {% endif %}
+                  <span class="badge badge-default" style="font-size: 0.7rem; background: #e2e8f0;">{{ msg.message_type }}</span>
+                </span>
+                <span class="message-time">#{{ msg.sequence_number }} &bull; {{ msg.created_at|format_dt }}</span>
+              </div>
 
-            <div style="white-space: pre-line; font-size: 0.95rem; line-height: 1.6; color: #1e293b;">
-              {{ msg.message_text }}
+              <div style="white-space: pre-line; font-size: 0.95rem; line-height: 1.6; color: #1e293b;">
+                {{ msg.message_text }}
+              </div>
             </div>
-          </div>
+          {% endif %}
         {% endfor %}
       </div>
 
@@ -114,32 +189,57 @@
       {% endif %}
     </div>
 
-    <!-- Reply / Clarification Form -->
+    <!-- Reply / Notes Form -->
     <div class="card">
       <div class="card-title">
-        <span>Post a Reply / Add Information</span>
+        {% if current_user.role == 'Employee' %}
+          <span>✍️ Reply / Provide Clarification</span>
+        {% else %}
+          <span>💬 Case Communication & Internal Notes</span>
+        {% endif %}
       </div>
 
       <form action="{{ url_for('post_ticket_message', ticket_id=ticket.ticket_id) }}" method="POST">
-        <div class="form-group" style="margin-bottom: 0.75rem;">
-          <label class="form-label">Post As:</label>
-          <div style="display: flex; gap: 1rem;">
-            <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-              <input type="radio" name="sender_type" value="Employee" checked> Employee ({{ ticket.employee_name }})
-            </label>
-            <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-              <input type="radio" name="sender_type" value="HR"> HR Specialist
-            </label>
+        {% if current_user.role == 'Employee' %}
+          <input type="hidden" name="sender_type" value="Employee">
+          <input type="hidden" name="message_type" value="Clarification">
+          <input type="hidden" name="is_internal_note" value="0">
+          <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+            Provide any additional information or reply to clarification requests regarding your inquiry:
+          </p>
+        {% else %}
+          <!-- HR / Admin Role Options -->
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" style="font-size: 0.85rem;">Communication Type:</label>
+            <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+              <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                <input type="radio" name="is_internal_note" value="0" checked onchange="document.getElementById('note-warning').style.display = 'none';">
+                <span>💬 <strong>Send Reply to Employee</strong> (Public)</span>
+              </label>
+              <label style="font-size: 0.9rem; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                <input type="radio" name="is_internal_note" value="1" onchange="document.getElementById('note-warning').style.display = 'block';">
+                <span style="color: #b45309;">🔒 <strong>Add Confidential Internal Note</strong> (HR Only)</span>
+              </label>
+            </div>
+            <div id="note-warning" style="display: none; margin-top: 0.5rem; font-size: 0.8rem; color: #b45309; background: #fefce8; padding: 0.4rem 0.6rem; border-radius: 4px; border: 1px solid #fef08a;">
+              🛡️ Internal notes and investigation details are strictly restricted to authorized staff and will never appear in the employee portal.
+            </div>
           </div>
-        </div>
+          <input type="hidden" name="sender_type" value="HR">
+          <input type="hidden" name="message_type" value="Clarification">
+        {% endif %}
 
         <div class="form-group">
-          <textarea name="message_text" class="form-control" rows="3" placeholder="Type clarification, additional details, or case notes here..." required></textarea>
+          <textarea name="message_text" class="form-control" rows="3" placeholder="{% if current_user.role == 'Employee' %}Type your message, reply, or additional details here...{% else %}Enter your public response to the employee or confidential internal case note...{% endif %}" required></textarea>
         </div>
 
         <div style="display: flex; justify-content: flex-end;">
           <button type="submit" class="btn btn-primary btn-sm">
-            Send Message &rarr;
+            {% if current_user.role == 'Employee' %}
+              Send Reply &rarr;
+            {% else %}
+              Post Message / Note &rarr;
+            {% endif %}
           </button>
         </div>
       </form>
@@ -172,10 +272,15 @@
 
         {% if ticket.sensitive_flag == 1 %}
           <div style="background: var(--danger-bg); border: 1px solid var(--danger-border); padding: 0.6rem; border-radius: 6px;">
-            <strong style="color: var(--danger); display: block; font-size: 0.85rem;">🔒 Sensitive Case Protections:</strong>
-            <span style="font-size: 0.8rem; color: #991b1b;">
-              AI automatic resolution disabled. Details restricted to authorized personnel in queue <strong>{{ current_assignment.assigned_queue }}</strong>.
+            <strong style="color: var(--danger); display: block; font-size: 0.85rem;">🔒 Sensitive Case Guardrails:</strong>
+            <span style="font-size: 0.8rem; color: #991b1b; display: block; margin-top: 0.2rem;">
+              AI automatic resolution is strictly disabled. Routed directly to <strong>{{ current_assignment.assigned_queue }}</strong> for human specialist review.
             </span>
+            {% if ticket.issue_type and ticket.issue_type != 'Standard' %}
+              <div style="margin-top: 0.35rem; font-size: 0.78rem; color: #7f1d1d; font-weight: 500;">
+                Sensitive Reason Flag: {{ ticket.issue_type }}
+              </div>
+            {% endif %}
           </div>
         {% endif %}
       </div>
@@ -196,7 +301,7 @@
 
           <div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-              <span style="color: var(--text-muted);">First Response SLA:</span>
+              <span style="color: var(--text-muted);">First Response Target:</span>
               {% if sla.response_met == 1 %}
                 <span class="badge badge-resolved">Met</span>
               {% elif sla_status.is_response_overdue %}
@@ -212,7 +317,7 @@
 
           <div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 0.2rem;">
-              <span style="color: var(--text-muted);">Resolution SLA:</span>
+              <span style="color: var(--text-muted);">Resolution Target:</span>
               {% if sla.resolution_met == 1 %}
                 <span class="badge badge-resolved">Met</span>
               {% elif sla_status.is_resolution_overdue %}
@@ -229,8 +334,35 @@
           </div>
 
           <div style="font-size: 0.78rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 0.5rem;">
-            Calendar: {{ sla.business_calendar }}
+            Calendar: {{ sla.business_calendar }} (Mon-Fri 09:00-17:00 UTC)
           </div>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Assignment History Card (Staff Visibility) -->
+    {% if current_user.role != 'Employee' and assignments %}
+      <div class="card">
+        <div class="card-title" style="font-size: 1rem;">
+          <span>📋 Assignment History ({{ assignments|length }})</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.6rem; font-size: 0.82rem;">
+          {% for asg in assignments %}
+            <div style="border-left: 3px solid {% if asg.ended_at %}#94a3b8{% else %}var(--primary){% endif %}; padding-left: 0.6rem;">
+              <div style="display: flex; justify-content: space-between;">
+                <strong>{{ asg.assigned_queue }}</strong>
+                {% if not asg.ended_at %}
+                  <span class="badge badge-open" style="font-size: 0.65rem;">Active</span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 0.72rem;">Completed</span>
+                {% endif %}
+              </div>
+              <div style="color: #475569;">{{ asg.reason }}</div>
+              <div style="color: var(--text-muted); font-size: 0.72rem;">
+                {{ asg.assigned_at|format_dt }} {% if asg.ended_at %}&rarr; {{ asg.ended_at|format_dt }}{% endif %}
+              </div>
+            </div>
+          {% endfor %}
         </div>
       </div>
     {% endif %}
@@ -260,52 +392,71 @@
       </div>
     {% endif %}
 
-    <!-- Admin Workflow Controls -->
-    <div class="card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
-      <div class="card-title" style="font-size: 1rem;">
-        <span>🛠️ HR Admin Controls</span>
+    <!-- HR / Admin Workflow Controls (Authorized Staff Only) -->
+    {% if current_user.role != 'Employee' %}
+      <div class="card" style="border: 1px solid #cbd5e1; background: #f8fafc;">
+        <div class="card-title" style="font-size: 1rem;">
+          <span>🛠️ HR Admin Controls</span>
+        </div>
+
+        <!-- Reassign Queue form -->
+        <form action="{{ url_for('admin_reassign', ticket_id=ticket.ticket_id) }}" method="POST" style="margin-bottom: 1.25rem;">
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-size: 0.8rem;">Reassign Queue:</label>
+            <select name="new_queue" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
+              {% for q in available_queues %}
+                <option value="{{ q }}" {% if current_assignment and current_assignment.assigned_queue == q %}selected{% endif %}>
+                  {{ q }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <input type="text" name="reason" class="form-control" placeholder="Reassignment reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
+          </div>
+          <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
+            Update Queue Assignment
+          </button>
+        </form>
+
+        <!-- Status & Resolution update form -->
+        <form action="{{ url_for('admin_status', ticket_id=ticket.ticket_id) }}" method="POST">
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-size: 0.8rem;">Update Ticket Status:</label>
+            <select name="status" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
+              {% for st in ['Open', 'In_Progress', 'Awaiting_Employee', 'Resolved', 'Closed'] %}
+                <option value="{{ st }}" {% if ticket.status == st %}selected{% endif %}>
+                  {{ st }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <label class="form-label" style="font-size: 0.8rem;">Resolution Outcome (if resolving):</label>
+            <select name="outcome" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
+              <option value="">Select Outcome...</option>
+              <option value="Answered" {% if resolution and resolution.outcome == 'Answered' %}selected{% endif %}>Answered</option>
+              <option value="Escalated" {% if resolution and resolution.outcome == 'Escalated' %}selected{% endif %}>Escalated</option>
+              <option value="Rejected" {% if resolution and resolution.outcome == 'Rejected' %}selected{% endif %}>Rejected</option>
+              <option value="Unresolved" {% if resolution and resolution.outcome == 'Unresolved' %}selected{% endif %}>Unresolved</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <input type="text" name="resolution_summary" class="form-control" placeholder="Resolution summary notes..." style="font-size: 0.85rem; padding: 0.4rem;">
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.5rem;">
+            <input type="text" name="reason" class="form-control" placeholder="Status change reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
+            Update Status & Outcome
+          </button>
+        </form>
       </div>
-
-      <!-- Reassign form -->
-      <form action="{{ url_for('admin_reassign', ticket_id=ticket.ticket_id) }}" method="POST" style="margin-bottom: 1.25rem;">
-        <div class="form-group" style="margin-bottom: 0.5rem;">
-          <label class="form-label" style="font-size: 0.8rem;">Reassign Queue:</label>
-          <select name="new_queue" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
-            {% for q in available_queues %}
-              <option value="{{ q }}" {% if current_assignment and current_assignment.assigned_queue == q %}selected{% endif %}>
-                {{ q }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group" style="margin-bottom: 0.5rem;">
-          <input type="text" name="reason" class="form-control" placeholder="Reassignment reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
-        </div>
-        <button type="submit" class="btn btn-secondary btn-sm" style="width: 100%;">
-          Update Assignment
-        </button>
-      </form>
-
-      <!-- Status update form -->
-      <form action="{{ url_for('admin_status', ticket_id=ticket.ticket_id) }}" method="POST">
-        <div class="form-group" style="margin-bottom: 0.5rem;">
-          <label class="form-label" style="font-size: 0.8rem;">Change Status:</label>
-          <select name="status" class="form-control" style="font-size: 0.85rem; padding: 0.4rem;">
-            {% for st in ['Open', 'In_Progress', 'Awaiting_Employee', 'Resolved', 'Closed'] %}
-              <option value="{{ st }}" {% if ticket.status == st %}selected{% endif %}>
-                {{ st }}
-              </option>
-            {% endfor %}
-          </select>
-        </div>
-        <div class="form-group" style="margin-bottom: 0.5rem;">
-          <input type="text" name="reason" class="form-control" placeholder="Status change reason..." style="font-size: 0.85rem; padding: 0.4rem;" required>
-        </div>
-        <button type="submit" class="btn btn-primary btn-sm" style="width: 100%;">
-          Update Ticket Status
-        </button>
-      </form>
-    </div>
+    {% endif %}
 
     <!-- Audit Event History -->
     <div class="card">

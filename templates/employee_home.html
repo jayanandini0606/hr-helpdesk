@@ -1,19 +1,25 @@
 {% extends "base.html" %}
 
-{% block title %}Employee Helpdesk{% endblock %}
+{% block title %}Employee Portal — My HR Requests{% endblock %}
 
 {% block content %}
+<!-- Welcome & Identity Section -->
 <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
   <div>
-    <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
-      Welcome, {{ employee.full_name }}
-    </h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
-      ID: <strong>{{ employee.employee_id }}</strong> &bull; Department: <strong>{{ employee.department_name }}</strong> &bull; Status: <span class="badge badge-resolved">{{ employee.employment_status }}</span>
+    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+      <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
+        Welcome, {{ employee.full_name }}
+      </h1>
+      <span class="role-tag role-tag-employee">Employee Portal</span>
+    </div>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+      Employee ID: <strong>{{ employee.employee_id }}</strong> &bull;
+      Department: <strong>{{ employee.department_name }}</strong> &bull;
+      Employment Status: <span class="badge badge-resolved">{{ employee.employment_status }}</span>
     </p>
   </div>
   <div>
-    <a href="{{ url_for('new_ticket') }}" class="btn btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.95rem;">
+    <a href="{{ url_for('new_ticket') }}" class="btn btn-primary" style="padding: 0.65rem 1.25rem; font-size: 0.95rem; font-weight: 600;">
       ✍️ Submit New HR Request
     </a>
   </div>
@@ -22,17 +28,65 @@
 <!-- Employee Stats Grid -->
 <div class="stat-grid">
   <div class="stat-card">
-    <span class="stat-label">Total Requests</span>
+    <span class="stat-label">Total Requests Submitted</span>
     <span class="stat-value">{{ total_tickets }}</span>
+    <span class="stat-badge" style="color: var(--text-muted);">Personal Request History</span>
   </div>
   <div class="stat-card">
-    <span class="stat-label">Active / In Review</span>
-    <span class="stat-value" style="color: var(--warning);">{{ in_progress_tickets }}</span>
+    <span class="stat-label">Open / In Review</span>
+    <span class="stat-value" style="color: var(--warning);">{{ open_tickets }}</span>
+    <span class="stat-badge badge badge-awaiting">Active Cases</span>
   </div>
   <div class="stat-card">
-    <span class="stat-label">Resolved</span>
+    <span class="stat-label">Resolved Requests</span>
     <span class="stat-value" style="color: var(--success);">{{ resolved_tickets }}</span>
+    <span class="stat-badge badge badge-resolved">Completed with Citations</span>
   </div>
+</div>
+
+<!-- Search & Filter Functionality -->
+<div class="card" style="padding: 1.25rem; margin-bottom: 1.5rem;">
+  <form action="{{ url_for('employee_home') }}" method="GET" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Status</label>
+      <select name="status" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Statuses</option>
+        {% for st in ['Open', 'In_Progress', 'Awaiting_Employee', 'Resolved', 'Closed'] %}
+          <option value="{{ st }}" {% if filters.status == st %}selected{% endif %}>{{ st }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Category</label>
+      <select name="category_id" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Categories</option>
+        {% for cat in categories_list %}
+          <option value="{{ cat[0] }}" {% if filters.category_id == cat[0] %}selected{% endif %}>{{ cat[1] }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Priority</label>
+      <select name="priority" class="form-control" style="padding: 0.45rem;">
+        <option value="">All Priorities</option>
+        {% for p in ['Critical', 'High', 'Medium', 'Low'] %}
+          <option value="{{ p }}" {% if filters.priority == p %}selected{% endif %}>{{ p }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label" style="font-size: 0.8rem;">Search Keyword</label>
+      <input type="text" name="search" class="form-control" placeholder="Search subject or description..." style="padding: 0.45rem;" value="{{ filters.search or '' }}">
+    </div>
+
+    <div style="display: flex; gap: 0.5rem;">
+      <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; flex: 1;">Filter</button>
+      <a href="{{ url_for('employee_home') }}" class="btn btn-secondary" style="padding: 0.45rem 0.75rem;" title="Reset filters">Reset</a>
+    </div>
+  </form>
 </div>
 
 <!-- My Ticket History Table -->
@@ -60,7 +114,7 @@
         </thead>
         <tbody>
           {% for t in tickets %}
-            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}">
+            <tr>
               <td>
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
                   {{ t.ticket_id }}
@@ -91,11 +145,19 @@
   {% else %}
     <div style="text-align: center; padding: 3rem 1rem;">
       <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📋</div>
-      <h3 style="font-weight: 600; margin-bottom: 0.4rem;">No Requests Submitted Yet</h3>
+      <h3 style="font-weight: 600; margin-bottom: 0.4rem;">No Requests Found</h3>
       <p style="color: var(--text-muted); max-width: 450px; margin: 0 auto 1.25rem;">
-        Have a question regarding benefits, leaves, payroll schedules, or company guidelines? Submit a request and our AI assistant will provide instant, grounded policy answers.
+        {% if filters.search or filters.status or filters.category_id or filters.priority %}
+          No tickets match your filter criteria. Try resetting filters to see all your submitted requests.
+        {% else %}
+          You haven't submitted any HR inquiries yet. Need help with leaves, benefits, payroll, or company policies? Submit a request and get instant AI-grounded policy answers.
+        {% endif %}
       </p>
-      <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">Create Your First Ticket</a>
+      {% if filters.search or filters.status or filters.category_id or filters.priority %}
+        <a href="{{ url_for('employee_home') }}" class="btn btn-secondary">Clear Filters</a>
+      {% else %}
+        <a href="{{ url_for('new_ticket') }}" class="btn btn-primary">Create Your First Ticket</a>
+      {% endif %}
     </div>
   {% endif %}
 </div>

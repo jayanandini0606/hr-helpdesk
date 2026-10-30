@@ -7,19 +7,20 @@
 
 ## Table of Contents
 1. [Business Problem & Overview](#1-business-problem--overview)
-2. [System Architecture](#2-system-architecture)
+2. [System Architecture & Role-Based Portals](#2-system-architecture--role-based-portals)
 3. [Database Design & Relationships](#3-database-design--relationships)
-4. [Policy Versioning & Effective Date Approach](#4-policy-versioning--effective-date-approach)
-5. [Ticket Lifecycle Workflow](#5-ticket-lifecycle-workflow)
-6. [Sensitive-Case Detection & Guardrails](#6-sensitive-case-detection--guardrails)
-7. [SLA Management & Business Calendar](#7-sla-management--business-calendar)
-8. [Setup & Installation Instructions (Windows & VS Code)](#8-setup--installation-instructions-windows--vs-code)
-9. [Running the Application](#9-running-the-application)
-10. [Running Automated Tests](#10-running-automated-tests)
-11. [Running the Evaluation Benchmark](#11-running-the-evaluation-benchmark)
-12. [Interview Demonstration Walkthrough (6 Core Scenarios)](#12-interview-demonstration-walkthrough-6-core-scenarios)
-13. [Environment Variables](#13-environment-variables)
-14. [Security, Disclaimers & Known Limitations](#14-security-disclaimers--known-limitations)
+4. [Role-Based Access Control (RBAC) & Portal Features](#4-role-based-access-control-rbac--portal-features)
+5. [Policy Versioning & Effective Date Approach](#5-policy-versioning--effective-date-approach)
+6. [Ticket Lifecycle Workflow](#6-ticket-lifecycle-workflow)
+7. [Sensitive-Case Detection & Guardrails](#7-sensitive-case-detection--guardrails)
+8. [SLA Management & Business Calendar](#8-sla-management--business-calendar)
+9. [Setup & Installation Instructions (Windows & VS Code)](#9-setup--installation-instructions-windows--vs-code)
+10. [Running the Application](#10-running-the-application)
+11. [Running Automated Tests](#11-running-automated-tests)
+12. [Running the Evaluation Benchmark](#12-running-the-evaluation-benchmark)
+13. [Interview Demonstration Walkthrough (6 Core Scenarios)](#13-interview-demonstration-walkthrough-6-core-scenarios)
+14. [Environment Variables](#14-environment-variables)
+15. [Security, Disclaimers & Known Limitations](#15-security-disclaimers--known-limitations)
 
 ---
 
@@ -113,7 +114,37 @@ The database is built on SQLite with `PRAGMA foreign_keys = ON` enforced on ever
 
 ---
 
-## 4. Policy Versioning & Effective Date Approach
+## 4. Role-Based Access Control (RBAC) & Portal Features
+
+The application features role-based interfaces distinguishing the **Employee Portal** and the **HR / Admin Portal**:
+
+### Portal Comparison Matrix
+
+| Capability | Employee Portal (`/employee`) | HR / Admin Portal (`/admin`) |
+|---|:---:|:---:|
+| **Target Users** | All Employees | HR Partners, IT/Operations, Administrators |
+| **Ticket Visibility** | **Strictly Isolated:** Only tickets personally submitted | **Global:** All company tickets across all queues |
+| **Submit Requests** | Yes (Instant AI Grounding) | Yes (for demonstration) |
+| **Grounded AI Answers & Citations** | Yes (Verifiable policy version citations) | Yes |
+| **Ticket Lifecycle Controls** | Read-only status & reply | Status transition & outcome recording |
+| **Queue Reassignment** | No | Yes (Benefits, Leave, Payroll, Confidential, etc.) |
+| **Confidential Internal Notes** | **Strictly Hidden** | Yes (Private staff investigation notes) |
+| **SLA & Overdue Compliance** | Personal ticket SLA targets | Global SLA KPI dashboard & breach tracking |
+| **Restricted Master Data** | Personal profile only | Full employee master data & reporting lines |
+
+### Security & Privacy Protections
+1. **Ticket Isolation:** When logged in as an Employee, attempting to view any ticket belonging to another employee (`/tickets/<ticket_id>`) is blocked with HTTP 403 / redirection warning.
+2. **Internal HR Notes Guardrail:** Staff notes tagged with `[INTERNAL NOTE]` are completely stripped from employee portal responses and only rendered to authorized HR/Admin users with a distinctive yellow warning badge.
+3. **1-Click Demo Personas:** The landing page (`/login`) provides quick presets:
+   - `👤 Employee: Ishaan Sharma (EMP-000006)`
+   - `👤 Employee: Kavya Sharma (EMP-000007)`
+   - `👔 HR Partner: Aarav Sharma (EMP-000001)`
+   - `💻 IT Partner: Aditi Sharma (EMP-000002)`
+   - `⚡ System Administrator`
+
+---
+
+## 5. Policy Versioning & Effective Date Approach
 
 Company policies change over time. The application resolves the applicable policy version dynamically based on ticket submission time:
 
@@ -134,7 +165,7 @@ LIMIT 1;
 
 ---
 
-## 5. Ticket Lifecycle Workflow
+## 6. Ticket Lifecycle Workflow
 
 The system supports 5 defined statuses:
 
@@ -155,7 +186,7 @@ The system supports 5 defined statuses:
 
 ---
 
-## 6. Sensitive-Case Detection & Guardrails
+## 7. Sensitive-Case Detection & Guardrails
 
 The system implements rule-based pattern matching with conservative fallback guardrails:
 
@@ -168,7 +199,7 @@ The system implements rule-based pattern matching with conservative fallback gua
 
 ---
 
-## 7. SLA Management & Business Calendar
+## 8. SLA Management & Business Calendar
 
 ### Target Deadlines by Priority
 - **Critical:** 1-hour Response SLA, 4-hour Resolution SLA.
@@ -186,7 +217,7 @@ The system implements rule-based pattern matching with conservative fallback gua
 
 ---
 
-## 8. Setup & Installation Instructions (Windows & VS Code)
+## 9. Setup & Installation Instructions (Windows & VS Code)
 
 ### Prerequisites
 - Windows 10/11
@@ -222,7 +253,7 @@ python src/generate_master_data.py
 
 ---
 
-## 9. Running the Application
+## 10. Running the Application
 
 Start the Flask development server:
 ```powershell
@@ -230,20 +261,21 @@ python app.py
 ```
 
 Open your browser and navigate to:
+- **Role Selection / Login Page:** [http://127.0.0.1:5000/login](http://127.0.0.1:5000/login)
 - **Employee Portal:** [http://127.0.0.1:5000/employee](http://127.0.0.1:5000/employee)
 - **HR Admin Dashboard:** [http://127.0.0.1:5000/admin](http://127.0.0.1:5000/admin)
 - **Policy Hub & Versioning:** [http://127.0.0.1:5000/policies](http://127.0.0.1:5000/policies)
 
 ---
 
-## 10. Running Automated Tests
+## 11. Running Automated Tests
 
 Run the complete test suite with verbose output:
 ```powershell
 python -m pytest -v
 ```
 
-### Actual Test Results
+### Actual Test Results (36/36 Passed)
 ```
 tests/test_classification.py::test_classify_all_five_categories PASSED
 tests/test_classification.py::test_sensitive_harassment_detection PASSED
@@ -257,12 +289,20 @@ tests/test_database.py::test_foreign_key_integrity PASSED
 tests/test_database.py::test_master_data_repeat_execution_idempotency PASSED
 tests/test_database.py::test_all_twenty_policies_exist PASSED
 tests/test_database.py::test_knowledge_articles_cite_published_versions PASSED
+tests/test_database.py::test_parameterized_volume_generation_and_anomalies PASSED
 tests/test_policy_retrieval.py::test_retrieval_payslip_access PASSED
 tests/test_policy_retrieval.py::test_retrieval_sick_leave_policy PASSED
 tests/test_policy_retrieval.py::test_effective_date_version_selection_does_not_just_take_max_number PASSED
 tests/test_policy_retrieval.py::test_effective_date_retired_version_not_selected_for_current_date PASSED
 tests/test_policy_retrieval.py::test_grounded_answer_includes_citations PASSED
 tests/test_policy_retrieval.py::test_fallback_when_no_policy_found PASSED
+tests/test_rbac_and_portals.py::test_portal_selection_page_renders_both_portals PASSED
+tests/test_rbac_and_portals.py::test_employee_login_and_dashboard_access PASSED
+tests/test_rbac_and_portals.py::test_employee_cannot_access_admin_dashboard PASSED
+tests/test_rbac_and_portals.py::test_hr_partner_can_access_admin_dashboard PASSED
+tests/test_rbac_and_portals.py::test_strict_employee_ticket_isolation PASSED
+tests/test_rbac_and_portals.py::test_internal_hr_notes_hidden_from_employee_portal PASSED
+tests/test_rbac_and_portals.py::test_employee_dashboard_search_and_filters PASSED
 tests/test_sla.py::test_sla_targets_by_priority PASSED
 tests/test_sla.py::test_business_calendar_skips_weekends PASSED
 tests/test_sla.py::test_evaluate_sla_status_overdue_flag PASSED
@@ -274,19 +314,19 @@ tests/test_tickets.py::test_ticket_reassignment_preserves_history PASSED
 tests/test_tickets.py::test_ticket_status_transition_and_event_trail PASSED
 tests/test_tickets.py::test_add_message_increments_sequence PASSED
 
-============================= 28 passed in 8.34s ==============================
+============================= 36 passed in 8.67s ==============================
 ```
 
 ---
 
-## 11. Running the Evaluation Benchmark
+## 12. Running the Evaluation Benchmark
 
 Execute the 25-case evaluation benchmark:
 ```powershell
 python evaluation/run_evaluation.py
 ```
 
-### Actual Benchmark Output
+### Actual Benchmark Output (25/25 Passed, 100.0%)
 ```
 ===========================================================================
 RUNNING AI HR HELPDESK EVALUATION SUITE (25 TEST CASES)
@@ -326,7 +366,7 @@ Results written to: evaluation/evaluation_results.json
 
 ---
 
-## 12. Interview Demonstration Walkthrough (6 Core Scenarios)
+## 13. Interview Demonstration Walkthrough (6 Core Scenarios)
 
 In the Admin Dashboard (`/admin`), click **"⚡ Seed 6 Demo Scenarios"**. This seeds the 6 required scenarios:
 
@@ -341,7 +381,7 @@ In the Admin Dashboard (`/admin`), click **"⚡ Seed 6 Demo Scenarios"**. This s
 
 ---
 
-## 13. Environment Variables
+## 14. Environment Variables
 
 Copy `.env.example` to `.env` to configure optional overrides:
 
@@ -359,9 +399,9 @@ BUSINESS_CALENDAR=standard_business_hours
 
 ---
 
-## 14. Security, Disclaimers & Known Limitations
+## 15. Security, Disclaimers & Known Limitations
 
 1. **Synthetic Data Disclaimer:** All employees, manager hierarchies, departments, and policies are 100% synthetic for demonstration purposes.
-2. **Authentication Notice:** The top navigation bar user-switcher is a convenience simulator for interview demonstration; it is not production authentication.
+2. **Authentication Notice:** The application features role-based access control with session isolation and demo identity presets suitable for hackathon demonstrations.
 3. **Deterministic Local AI Engine:** The application functions 100% locally with zero paid API keys or external network dependencies.
 4. **Future Enhancements:** Vector embeddings (e.g. `sqlite-vec`), enterprise SAML/SSO integration, and bidirectional email webhook integrations.

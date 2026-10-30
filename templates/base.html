@@ -11,34 +11,55 @@
 
   <!-- Top Navigation Bar -->
   <header class="navbar">
-    <a href="{{ url_for('employee_home') }}" class="nav-brand">
+    <a href="{{ url_for('portal_select_route') }}" class="nav-brand">
       <span>🛡️ Enterprise HR Helpdesk</span>
       <span class="brand-badge">AI Powered</span>
     </a>
 
     <nav class="nav-links">
-      <a href="{{ url_for('employee_home') }}" class="nav-link {% if request.endpoint in ('employee_home', 'new_ticket') %}active{% endif %}">
-        👤 Employee Helpdesk
-      </a>
-      <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
-        📊 HR Admin Dashboard
-      </a>
-      <a href="{{ url_for('policy_list') }}" class="nav-link {% if request.endpoint == 'policy_list' %}active{% endif %}">
-        📜 Policy Hub
-      </a>
+      {% if current_user.role == 'Employee' %}
+        <a href="{{ url_for('employee_home') }}" class="nav-link {% if request.endpoint == 'employee_home' %}active{% endif %}">
+          👤 My Requests
+        </a>
+        <a href="{{ url_for('new_ticket') }}" class="nav-link {% if request.endpoint == 'new_ticket' %}active{% endif %}">
+          ✍️ Submit Request
+        </a>
+        <a href="{{ url_for('policy_list') }}" class="nav-link {% if request.endpoint == 'policy_list' %}active{% endif %}">
+          📜 Policy Hub
+        </a>
+      {% else %}
+        <a href="{{ url_for('admin_dashboard') }}" class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+          📊 HR Admin Dashboard
+        </a>
+        <a href="{{ url_for('policy_list') }}" class="nav-link {% if request.endpoint == 'policy_list' %}active{% endif %}">
+          📜 Policy Hub
+        </a>
+        <a href="{{ url_for('employee_home') }}" class="nav-link {% if request.endpoint == 'employee_home' %}active{% endif %}" title="View Helpdesk from an employee's perspective">
+          👤 Employee View
+        </a>
+      {% endif %}
     </nav>
 
     <div class="nav-user">
-      <form action="{{ url_for('select_employee') }}" method="POST" class="user-selector-form" title="Simulated employee identity for local demo">
-        <label for="employee_id" style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500;">Demo User:</label>
-        <select name="employee_id" id="employee_id" onchange="this.form.submit()">
-          {% for emp in demo_employees %}
-            <option value="{{ emp.employee_id }}" {% if emp.employee_id == current_employee.employee_id %}selected{% endif %}>
-              {{ emp.full_name }} ({{ emp.employee_id }})
-            </option>
-          {% endfor %}
-        </select>
-      </form>
+      <div class="role-pill">
+        {% if current_user.role == 'Employee' %}
+          <span class="role-tag role-tag-employee">Employee</span>
+        {% elif current_user.role == 'HR Partner' %}
+          <span class="role-tag role-tag-hr">HR Partner</span>
+        {% elif current_user.role == 'IT/Operations Partner' %}
+          <span class="role-tag role-tag-it">IT Partner</span>
+        {% else %}
+          <span class="role-tag role-tag-admin">Admin</span>
+        {% endif %}
+        <span><strong>{{ current_user.full_name }}</strong> ({{ current_user.employee_id }})</span>
+      </div>
+
+      <a href="{{ url_for('portal_select_route') }}" class="btn btn-secondary btn-sm" title="Change role or portal">
+        🔄 Switch Role
+      </a>
+      <a href="{{ url_for('logout_route') }}" class="btn btn-secondary btn-sm" title="Sign out of current portal">
+        Logout
+      </a>
     </div>
   </header>
 

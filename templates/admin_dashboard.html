@@ -29,23 +29,42 @@
   </div>
 </div>
 
-<!-- KPI Metrics Grid -->
-<div class="stat-grid">
+<!-- KPI Metrics Grid (8 Core Operational Metrics) -->
+<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
   <div class="stat-card">
     <span class="stat-label">Total Tickets</span>
     <span class="stat-value">{{ metrics.total_tickets }}</span>
+    <span class="stat-badge" style="color: var(--text-muted); font-size: 0.75rem;">All Intake</span>
   </div>
 
   <div class="stat-card">
-    <span class="stat-label">Sensitive Cases</span>
+    <span class="stat-label">Open</span>
+    <span class="stat-value" style="color: var(--primary);">{{ metrics.open_tickets }}</span>
+    <span class="stat-badge badge badge-open">Pending Triage</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">In-Progress</span>
+    <span class="stat-value" style="color: var(--warning);">{{ metrics.in_progress_tickets }}</span>
+    <span class="stat-badge badge badge-in-progress">Active Review</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Resolved</span>
+    <span class="stat-value" style="color: var(--success);">{{ metrics.resolved_tickets }}</span>
+    <span class="stat-badge badge badge-resolved">Completed</span>
+  </div>
+
+  <div class="stat-card">
+    <span class="stat-label">Sensitive</span>
     <span class="stat-value" style="color: var(--danger);">{{ metrics.sensitive_count }}</span>
-    <span class="stat-badge badge badge-sensitive">Confidential Guardrails</span>
+    <span class="stat-badge badge badge-sensitive">🔒 Guardrails</span>
   </div>
 
   <div class="stat-card">
-    <span class="stat-label">Escalated to Human</span>
-    <span class="stat-value" style="color: var(--warning);">{{ metrics.escalated_count }}</span>
-    <span class="stat-badge badge badge-awaiting">Specialist Queue</span>
+    <span class="stat-label">Escalated</span>
+    <span class="stat-value" style="color: #8b5cf6;">{{ metrics.escalated_count }}</span>
+    <span class="stat-badge badge badge-awaiting">Specialist Team</span>
   </div>
 
   <div class="stat-card">
@@ -54,14 +73,14 @@
       {{ metrics.overdue_count }}
     </span>
     <span class="stat-badge badge {% if metrics.overdue_count > 0 %}badge-overdue{% else %}badge-resolved{% endif %}">
-      {% if metrics.overdue_count > 0 %}Immediate Action Required{% else %}All SLAs Healthy{% endif %}
+      {% if metrics.overdue_count > 0 %}Breach Alert{% else %}Healthy{% endif %}
     </span>
   </div>
 
   <div class="stat-card">
-    <span class="stat-label">SLA Compliance Rate</span>
+    <span class="stat-label">SLA Rate</span>
     <span class="stat-value" style="color: var(--primary);">{{ metrics.sla_compliance_rate }}%</span>
-    <span class="stat-badge" style="font-size: 0.75rem; color: var(--text-muted);">Resolved within Target</span>
+    <span class="stat-badge" style="font-size: 0.75rem; color: var(--text-muted);">Compliance</span>
   </div>
 </div>
 
@@ -160,16 +179,17 @@
             <th>Subject</th>
             <th>Category</th>
             <th>Priority</th>
-            <th>Status</th>
+            <th>Sensitive</th>
             <th>Assigned Queue</th>
-            <th>SLA Status</th>
-            <th>Age</th>
+            <th>Created Date</th>
+            <th>SLA Deadline</th>
+            <th>Current Status</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for t in tickets %}
-            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}">
+            <tr>
               <td>
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
                   {{ t.ticket_id }}
@@ -181,9 +201,6 @@
               </td>
               <td>
                 <span style="font-weight: 500;">{{ t.subject }}</span>
-                {% if t.sensitive_flag == 1 %}
-                  <span class="badge badge-sensitive" style="margin-left: 0.25rem;">🔒 Sensitive</span>
-                {% endif %}
                 {% if t.issue_type and t.issue_type != 'Standard' %}
                   <span class="badge badge-priority-critical" style="margin-left: 0.25rem; font-size: 0.7rem;" title="Deliberate Injected Anomaly">
                     ⚠️ {{ t.issue_type }}
@@ -192,24 +209,31 @@
               </td>
               <td>{{ t.category_name }}</td>
               <td><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
-              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
+              <td>
+                {% if t.sensitive_flag == 1 %}
+                  <span class="badge badge-sensitive">🔒 Sensitive</span>
+                {% else %}
+                  <span style="color: var(--text-muted); font-size: 0.8rem;">Standard</span>
+                {% endif %}
+              </td>
               <td>
                 <span class="badge badge-default" style="background: #e2e8f0; color: #334155; font-weight: 600;">
                   {{ t.assigned_queue or "Unassigned" }}
                 </span>
               </td>
-              <td>
+              <td style="color: var(--text-muted); font-size: 0.82rem; white-space: nowrap;">
+                {{ t.created_at|format_dt }}
+              </td>
+              <td style="font-size: 0.82rem; white-space: nowrap;">
                 {% if t.is_overdue %}
-                  <span class="badge badge-overdue">⚠️ OVERDUE</span>
+                  <span class="badge badge-overdue" title="Overdue breach">⚠️ {{ t.resolution_due_at|format_dt }}</span>
                 {% elif t.resolution_met == 1 %}
-                  <span class="badge badge-resolved">Met Target</span>
-                {% elif t.status in ('Resolved', 'Closed') %}
-                  <span class="badge badge-priority-critical">Breached</span>
+                  <span class="badge badge-resolved" title="Met Target">✓ {{ t.resolution_due_at|format_dt }}</span>
                 {% else %}
-                  <span class="badge badge-open">On Schedule</span>
+                  <span style="color: #475569;">{{ t.resolution_due_at|format_dt }}</span>
                 {% endif %}
               </td>
-              <td style="color: var(--text-muted); font-size: 0.85rem;">{{ t.age }}</td>
+              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
               <td>
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn btn-secondary btn-sm">
                   Review &rarr;

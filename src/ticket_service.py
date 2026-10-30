@@ -242,9 +242,12 @@ def get_ticket(ticket_id: str, db_path: Optional[Path] = None) -> Optional[Dict[
     """Retrieves complete ticket bundle including messages, assignments, citations, SLA, and events."""
     ticket = query_one("""
         SELECT t.*, e.full_name as employee_name, e.department_id as employee_department,
+               e.employment_status, e.manager_id, e.audience as employee_audience,
+               d.department_name,
                c.category_name, c.default_queue as category_queue
         FROM Ticket t
         JOIN Employee e ON t.employee_id = e.employee_id
+        LEFT JOIN Department d ON e.department_id = d.department_id
         JOIN Category c ON t.category_id = c.category_id
         WHERE t.ticket_id = ?
     """, (ticket_id,), db_path=db_path)
@@ -534,6 +537,10 @@ def get_admin_dashboard_metrics(db_path: Optional[Path] = None) -> Dict[str, Any
     """, db_path=db_path)
     status_counts = {r["status"]: r["count"] for r in status_rows}
 
+    open_tickets = status_counts.get("Open", 0)
+    in_progress_tickets = status_counts.get("In_Progress", 0) + status_counts.get("Awaiting_Employee", 0)
+    resolved_tickets = status_counts.get("Resolved", 0) + status_counts.get("Closed", 0)
+
     # Sensitive & Escalated
     sensitive_count = query_one(
         "SELECT COUNT(*) as count FROM Ticket WHERE sensitive_flag = 1",
@@ -595,6 +602,9 @@ def get_admin_dashboard_metrics(db_path: Optional[Path] = None) -> Dict[str, Any
 
     return {
         "total_tickets": total_tickets,
+        "open_tickets": open_tickets,
+        "in_progress_tickets": in_progress_tickets,
+        "resolved_tickets": resolved_tickets,
         "status_counts": status_counts,
         "sensitive_count": sensitive_count,
         "escalated_count": escalated_count,
