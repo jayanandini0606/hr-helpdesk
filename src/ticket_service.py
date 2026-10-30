@@ -562,15 +562,15 @@ def get_admin_dashboard_metrics(db_path: Optional[Path] = None) -> Dict[str, Any
     """, (now_iso,), db_path=db_path)["count"]
 
     # SLA Performance
-    resolved_tickets = query_all("""
+    resolved_sla_records = query_all("""
         SELECT s.resolution_met, s.response_met
         FROM SLA s
         JOIN Ticket t ON s.ticket_id = t.ticket_id
         WHERE t.status IN ('Resolved', 'Closed')
     """, db_path=db_path)
 
-    total_resolved = len(resolved_tickets)
-    met_count = sum(1 for r in resolved_tickets if r["resolution_met"] == 1)
+    total_resolved = len(resolved_sla_records)
+    met_count = sum(1 for r in resolved_sla_records if r["resolution_met"] == 1)
     sla_compliance_rate = round((met_count / total_resolved * 100), 1) if total_resolved > 0 else 100.0
 
     # Category distribution

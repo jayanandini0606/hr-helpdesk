@@ -330,13 +330,16 @@ elif portal_mode == "📊 HR / Admin Operations":
 
     # 8-KPI Operational Metrics Row
     k1, k2, k3, k4, k5, k6, k7, k8 = st.columns(8)
-    k1.metric("Total", metrics["total_tickets"])
-    k2.metric("Open", metrics["open_tickets"])
-    k3.metric("In-Progress", metrics["in_progress_tickets"])
-    k4.metric("Resolved", metrics["resolved_tickets"])
-    k5.metric("Sensitive", metrics["sensitive_count"])
-    k6.metric("Escalated", metrics["escalated_count"])
-    k7.metric("Overdue", metrics["overdue_count"])
+    k1.metric("Total", int(metrics["total_tickets"]))
+    k2.metric("Open", int(metrics["open_tickets"]))
+    k3.metric("In-Progress", int(metrics["in_progress_tickets"]))
+    resolved_val = metrics["resolved_tickets"]
+    if isinstance(resolved_val, list):
+        resolved_val = len(resolved_val)
+    k4.metric("Resolved", int(resolved_val))
+    k5.metric("Sensitive", int(metrics["sensitive_count"]))
+    k6.metric("Escalated", int(metrics["escalated_count"]))
+    k7.metric("Overdue", int(metrics["overdue_count"]))
     k8.metric("SLA Rate", f"{metrics['sla_compliance_rate']}%")
 
     st.markdown("---")
