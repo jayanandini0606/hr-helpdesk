@@ -18,7 +18,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.database import query_all, query_one, get_db_path
-from src.init_db import init_database
+from src.init_db import initialize_database, init_database
 from src.generate_master_data import generate_master_data, CATEGORIES
 from src.ticket_service import (
     create_ticket, get_ticket, add_ticket_message,
@@ -102,7 +102,7 @@ def ensure_database_ready():
     db_file = get_db_path()
     if not db_file.exists() or db_file.stat().st_size == 0:
         with st.spinner("Initializing database and generating master policy data..."):
-            init_database(db_file)
+            initialize_database(db_file)
             generate_master_data(db_path=db_file)
             st.success("Database initialized successfully with 100 employees and 20 policies!")
 

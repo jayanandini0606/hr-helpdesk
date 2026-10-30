@@ -1,6 +1,6 @@
-
 import sqlite3
 from pathlib import Path
+from typing import Optional
 
 # Project root = parent folder of src
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -9,13 +9,15 @@ SCHEMA_FILE = PROJECT_ROOT / "sql" / "schema.sql"
 DATABASE_FILE = PROJECT_ROOT / "data" / "hr_helpdesk.db"
 
 
-def initialize_database():
+def initialize_database(db_path: Optional[Path] = None):
+    """Initializes SQLite schema from sql/schema.sql."""
+    target_db = Path(db_path) if db_path else DATABASE_FILE
     if not SCHEMA_FILE.exists():
         raise FileNotFoundError(f"Schema not found: {SCHEMA_FILE}")
 
-    DATABASE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    target_db.parent.mkdir(parents=True, exist_ok=True)
 
-    connection = sqlite3.connect(DATABASE_FILE)
+    connection = sqlite3.connect(str(target_db))
 
     try:
         connection.execute("PRAGMA foreign_keys = ON")
@@ -33,11 +35,8 @@ def initialize_database():
         """).fetchall()
 
         print("Database initialized successfully!")
-        print(f"Database location: {DATABASE_FILE}")
+        print(f"Database location: {target_db}")
         print(f"Number of tables: {len(rows)}")
-
-        for row in rows:
-            print(f"- {row[0]}")
 
         # Check foreign-key definitions for existing records.
         violations = connection.execute(
@@ -51,6 +50,10 @@ def initialize_database():
 
     finally:
         connection.close()
+
+
+# Alias for backward compatibility
+init_database = initialize_database
 
 
 if __name__ == "__main__":
