@@ -541,16 +541,45 @@ else:
     st.caption(f"Showing {len(policies)} policies evaluated as of {as_of_str}")
 
     for p in policies:
-        with st.expander(f"{p['title']} ({p['category_name']}) — Effective: {p.get('effective_from', 'N/A')}"):
-            st.write(f"**Policy ID:** `{p['policy_id']}` &bull; **Owner Department:** `{p['owner_department_id']}` &bull; **Audience:** `{p['audience']}`")
-            st.write(f"**Selected Version:** Version `{p['version_number']}` (Status: `{p['version_status']}`)")
-            st.markdown(f"**Policy Text:**\n{p['policy_text']}")
+        versions = p.get("versions", [])
+        active_v = next((v for v in versions if v.get("is_active")), None)
 
-            # Knowledge articles
-            articles = query_all("""
-                SELECT * FROM KnowledgeArticle WHERE version_id = ?
-            """, (p["version_id"],))
-            if articles:
-                st.markdown(f"**Published Guidance Articles ({len(articles)}):**")
-                for a in articles:
-                    st.write(f"• **{a['title']}** (`{a['article_id']}`): {a['snippet']}")
+        if active_v:
+            eff_window = f"Active v{active_v['version_number']} (from {active_v['effective_from']})"
+            expander_title = f"{p['title']} ({p['category_name']}) — 🟢 {eff_window}"
+        else:
+            expander_title = f"{p['title']} ({p['category_name']}) — ⚪ No Active Version on {as_of_str}"
+
+        with st.expander(expander_title):
+            st.write(f"**Policy ID:** `{p['policy_id']}` &bull; **Department:** `{p.get('department_name') or p.get('owner_department_id')}` &bull; **Audience:** `{p.get('audience', 'All Employees')}`")
+
+            st.markdown("##### 📄 Policy Versions & Rules")
+            if not versions:
+                st.info("No version history recorded for this policy document.")
+            else:
+                for v in versions:
+                    is_active = v.get("is_active", False)
+                    v_status = v.get("status", "Unknown")
+                    if is_active:
+                        badge = "🟢 **Active Version (Applicable As-Of Date)**"
+                    elif v_status == "Draft":
+                        badge = "🟡 **Draft (Future / Under Revision)**"
+                    elif v_status == "Retired":
+                        badge = "⚪ **Retired (Archived Version)**"
+                    else:
+                        badge = f"**Status: {v_status}**"
+
+                    eff_end = v.get("effective_to") or "Indefinite"
+                    st.markdown(f"**Version {v['version_number']}** (`{v['version_id']}`) &bull; {badge}")
+                    st.caption(f"Effective Window: {v['effective_from']} to {eff_end}")
+                    st.info(v["policy_text"])
+
+                    # Knowledge articles linked to this version
+                    articles = v.get("articles") or []
+                    if articles:
+                        st.markdown(f"**📚 Linked Knowledge Articles ({len(articles)}):**")
+                        for a in articles:
+                            snippet = a.get("snippet", "")
+                            snippet_text = f": {snippet}" if snippet else ""
+                            st.write(f"• **{a['title']}** (`{a['article_id']}` — *{a.get('status', 'Published')}*){snippet_text}")
+                    st.markdown("---")

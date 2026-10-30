@@ -226,7 +226,7 @@ def get_all_policies_summary(
 
             # Fetch linked articles
             articles = query_all("""
-                SELECT article_id, title, status FROM KnowledgeArticle
+                SELECT article_id, title, snippet, status FROM KnowledgeArticle
                 WHERE version_id = ?
                 ORDER BY article_id ASC
             """, (v["version_id"],), db_path=db_path)
