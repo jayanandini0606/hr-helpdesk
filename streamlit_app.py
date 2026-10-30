@@ -104,7 +104,8 @@ def ensure_database_ready():
         with st.spinner("Initializing database and generating master policy data..."):
             initialize_database(db_file)
             generate_master_data(db_path=db_file)
-            st.success("Database initialized successfully with 100 employees and 20 policies!")
+            seed_demo_scenarios(db_path=db_file)
+            st.success("Database initialized successfully with 100 employees, 20 policies, and 6 core demo scenarios!")
 
 ensure_database_ready()
 
@@ -145,6 +146,13 @@ with st.sidebar.expander("⚡ Demo Management Tools"):
         results = seed_demo_scenarios()
         st.success(f"Seeded {len(results)} interview demo scenarios!")
         st.rerun()
+
+    if st.button("Generate Full 5,000 Tickets Dataset"):
+        with st.spinner("Generating 5,000 tickets, 20,000 messages, and SLAs..."):
+            from src.generate_data import generate_dataset
+            res = generate_dataset(target_tickets=5000, seed=20261022, export_csv=False)
+            st.success(f"Generated {res['tickets']:,} tickets and {res['messages']:,} messages!")
+            st.rerun()
 
     if st.button("Reset Master Database"):
         generate_master_data()
