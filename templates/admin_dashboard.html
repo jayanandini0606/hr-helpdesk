@@ -1,40 +1,40 @@
 {% extends "base.html" %}
 
-{% block title %}HR Admin Dashboard{% endblock %}
+{% block title %}HR Admin Dashboard — Operations & SLAs{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+<div class="admin-header-row">
   <div>
-    <h1 style="font-size: 1.6rem; font-weight: 700; color: var(--text-main);">
-      📊 HR Helpdesk Administration & SLA Dashboard
+    <h1 style="font-size: 1.55rem; font-weight: 700; color: var(--text-main);">
+      📊 HR Helpdesk Administration &amp; SLA Dashboard
     </h1>
-    <p style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem;">
+    <p style="color: var(--text-muted); font-size: 0.92rem; margin-top: 0.25rem;">
       Real-time queue monitoring, sensitive case protection, and SLA compliance tracking.
     </p>
   </div>
 
   <!-- Demo Actions Toolbar -->
-  <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+  <div class="admin-actions-bar">
     <form action="{{ url_for('seed_demo_route') }}" method="POST">
-      <button type="submit" class="btn btn-primary" title="Seeds the 6 core interview demo scenarios required by the challenge">
+      <button type="submit" class="btn btn-primary btn-sm" title="Seeds the 6 core interview demo scenarios required by the challenge">
         ⚡ Seed 6 Demo Scenarios
       </button>
     </form>
 
     <form action="{{ url_for('reset_db_route') }}" method="POST" onsubmit="return confirm('Reset and re-generate master database deterministically?');">
-      <button type="submit" class="btn btn-secondary" title="Clears and re-seeds synthetic departments, 100 employees, policies and articles">
+      <button type="submit" class="btn btn-secondary btn-sm" title="Clears and re-seeds synthetic departments, 100 employees, policies and articles">
         🔄 Reset Master DB
       </button>
     </form>
   </div>
 </div>
 
-<!-- KPI Metrics Grid (8 Core Operational Metrics) -->
-<div class="stat-grid" style="grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));">
+<!-- KPI Metrics Grid (8 Core Operational Metrics, Responsive) -->
+<div class="admin-stat-grid">
   <div class="stat-card">
     <span class="stat-label">Total Tickets</span>
     <span class="stat-value">{{ metrics.total_tickets }}</span>
-    <span class="stat-badge" style="color: var(--text-muted); font-size: 0.75rem;">All Intake</span>
+    <span class="stat-badge" style="color: var(--text-muted); font-size: 0.72rem;">All Intake</span>
   </div>
 
   <div class="stat-card">
@@ -80,13 +80,13 @@
   <div class="stat-card">
     <span class="stat-label">SLA Rate</span>
     <span class="stat-value" style="color: var(--primary);">{{ metrics.sla_compliance_rate }}%</span>
-    <span class="stat-badge" style="font-size: 0.75rem; color: var(--text-muted);">Compliance</span>
+    <span class="stat-badge" style="font-size: 0.72rem; color: var(--text-muted);">Compliance</span>
   </div>
 </div>
 
-<!-- Filter & Search Toolbar -->
+<!-- Filter & Search Toolbar (Responsive Grid) -->
 <div class="card" style="padding: 1.25rem;">
-  <form action="{{ url_for('admin_dashboard') }}" method="GET" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.75rem; align-items: flex-end;">
+  <form action="{{ url_for('admin_dashboard') }}" method="GET" class="admin-filter-form">
     <div>
       <label class="form-label" style="font-size: 0.8rem;">Status</label>
       <select name="status" class="form-control" style="padding: 0.45rem;">
@@ -153,7 +153,7 @@
       <input type="text" name="search" class="form-control" placeholder="Search ticket or employee..." style="padding: 0.45rem;" value="{{ filters.search or '' }}">
     </div>
 
-    <div style="display: flex; gap: 0.5rem;">
+    <div class="filter-actions" style="display: flex; gap: 0.5rem;">
       <button type="submit" class="btn btn-primary" style="padding: 0.45rem 1rem; flex: 1;">Filter</button>
       <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary" style="padding: 0.45rem 0.75rem;" title="Reset filters">Reset</a>
     </div>
@@ -167,6 +167,10 @@
     <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: normal;">
       Showing {{ tickets|length }} ticket(s)
     </span>
+  </div>
+
+  <div class="scroll-hint-pill">
+    <span>↔</span> Scroll table horizontally to view all columns
   </div>
 
   {% if tickets %}
@@ -189,34 +193,34 @@
         </thead>
         <tbody>
           {% for t in tickets %}
-            <tr>
-              <td>
+            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="clickable-row">
+              <td style="white-space: nowrap;">
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
                   {{ t.ticket_id }}
                 </a>
               </td>
-              <td>
+              <td style="white-space: nowrap;">
                 <span style="font-weight: 500;">{{ t.employee_name }}</span>
                 <span style="display: block; font-size: 0.75rem; color: var(--text-muted);">{{ t.employee_id }}</span>
               </td>
-              <td>
-                <span style="font-weight: 500;">{{ t.subject }}</span>
+              <td style="min-width: 220px; max-width: 320px;">
+                <span style="font-weight: 500; display: block; line-height: 1.35;">{{ t.subject }}</span>
                 {% if t.issue_type and t.issue_type != 'Standard' %}
-                  <span class="badge badge-priority-critical" style="margin-left: 0.25rem; font-size: 0.7rem;" title="Deliberate Injected Anomaly">
+                  <span class="badge badge-priority-critical" style="margin-top: 0.25rem; font-size: 0.7rem;" title="Deliberate Injected Anomaly">
                     ⚠️ {{ t.issue_type }}
                   </span>
                 {% endif %}
               </td>
-              <td>{{ t.category_name }}</td>
-              <td><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
-              <td>
+              <td style="white-space: nowrap;">{{ t.category_name }}</td>
+              <td style="white-space: nowrap;"><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
+              <td style="white-space: nowrap;">
                 {% if t.sensitive_flag == 1 %}
                   <span class="badge badge-sensitive">🔒 Sensitive</span>
                 {% else %}
                   <span style="color: var(--text-muted); font-size: 0.8rem;">Standard</span>
                 {% endif %}
               </td>
-              <td>
+              <td style="white-space: nowrap;">
                 <span class="badge badge-default" style="background: #e2e8f0; color: #334155; font-weight: 600;">
                   {{ t.assigned_queue or "Unassigned" }}
                 </span>
@@ -233,8 +237,8 @@
                   <span style="color: #475569;">{{ t.resolution_due_at|format_dt }}</span>
                 {% endif %}
               </td>
-              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
-              <td>
+              <td style="white-space: nowrap;"><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
+              <td style="white-space: nowrap;">
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn btn-secondary btn-sm">
                   Review &rarr;
                 </a>

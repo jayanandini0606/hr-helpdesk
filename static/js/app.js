@@ -17,8 +17,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const clickableRows = document.querySelectorAll("tr[data-href]");
   clickableRows.forEach(function (row) {
     row.style.cursor = "pointer";
-    row.addEventListener("click", function () {
-      window.location.href = row.getAttribute("data-href");
+    row.addEventListener("click", function (e) {
+      // Don't intercept direct clicks on links or buttons inside the row
+      if (e.target.closest("a") || e.target.closest("button") || e.target.closest("input")) {
+        return;
+      }
+      const href = row.getAttribute("data-href");
+      if (href) {
+        window.location.href = href;
+      }
     });
   });
 });

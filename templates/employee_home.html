@@ -99,7 +99,7 @@
   </div>
 
   {% if tickets %}
-    <div class="table-responsive">
+    <div class="table-responsive table-employee">
       <table>
         <thead>
           <tr>
@@ -114,8 +114,8 @@
         </thead>
         <tbody>
           {% for t in tickets %}
-            <tr>
-              <td>
+            <tr data-href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="clickable-row">
+              <td style="white-space: nowrap;">
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" style="font-weight: 600; color: var(--primary); text-decoration: none;">
                   {{ t.ticket_id }}
                 </a>
@@ -128,11 +128,11 @@
                   </span>
                 {% endif %}
               </td>
-              <td>{{ t.category_name }}</td>
-              <td><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
-              <td><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
-              <td style="color: var(--text-muted);">{{ t.created_at|format_dt }}</td>
-              <td>
+              <td style="white-space: nowrap;">{{ t.category_name }}</td>
+              <td style="white-space: nowrap;"><span class="badge {{ t.priority|priority_badge }}">{{ t.priority }}</span></td>
+              <td style="white-space: nowrap;"><span class="badge {{ t.status|status_badge }}">{{ t.status }}</span></td>
+              <td style="color: var(--text-muted); white-space: nowrap;">{{ t.created_at|format_dt }}</td>
+              <td style="white-space: nowrap;">
                 <a href="{{ url_for('ticket_detail', ticket_id=t.ticket_id) }}" class="btn btn-secondary btn-sm">
                   View &rarr;
                 </a>
