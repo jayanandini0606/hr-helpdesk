@@ -242,20 +242,35 @@ python -m venv venv
 ```powershell
 pip install -r requirements.txt
 ```
-*(Only lightweight packages: `flask` and `pytest`).*
+*(Includes `streamlit`, `flask`, `pytest`, and `pandas`).*
 
 ### Step 4: Initialize the SQLite Database & Generate Master Data
 ```powershell
 python src/init_db.py
 python src/generate_master_data.py
 ```
-*Output confirms 13 tables created, 100 employees, 20 policies, 40 versions, and 150 knowledge articles with 100% foreign-key integrity.*
+*(Note: If you run Streamlit directly, it also automatically checks and initializes the database on first run with zero configuration!)*
 
 ---
 
-## 10. Running the Application
+## 10. Running the Application on Localhost
 
-Start the Flask development server:
+You can run the application locally using either **Streamlit** (recommended for instant demo and interactive evaluation) or **Flask**:
+
+### Option A: Running via Streamlit (Recommended for Evaluation & Hackathon Demos)
+
+```powershell
+streamlit run streamlit_app.py
+```
+
+This immediately opens your browser at `http://localhost:8501` featuring:
+- **Workspace Switcher:** Easily toggle between **👤 Employee Self-Service**, **📊 HR / Admin Operations**, and **📜 Policy Hub**.
+- **Persona Selector:** Switch between any demo employee or staff persona (HR Partner, IT Partner, Admin) with 1 click.
+- **Auto-Initialization:** Database and master data are automatically validated and generated if running on a fresh clone.
+- **Zero Configuration:** Works right out of the box for anyone cloning your repository.
+
+### Option B: Running via Flask
+
 ```powershell
 python app.py
 ```
