@@ -1,5 +1,8 @@
 # AI-Powered HR Helpdesk
-LIVE URL: https://jayanandini-hr-hlppdesk.streamlit.app/
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://jayanandini-hr-hlppdesk.streamlit.app/)
+
+🌐 **Live Interactive Web App (1-Click):** [https://jayanandini-hr-hlppdesk.streamlit.app/](https://jayanandini-hr-hlppdesk.streamlit.app/)
+📁 **GitHub Repository:** [https://github.com/jayanandini0606/hr-helpdesk](https://github.com/jayanandini0606/hr-helpdesk)
 
 > **YottaFlex AI Forward Deployed Engineer (FDE) Code Challenge**  
 > A complete, fully-tested, full-stack HR Helpdesk that resolves routine employee requests using versioned policy sources, enforces strict confidentiality and routing for sensitive cases, and tracks service-level agreements (SLAs).
