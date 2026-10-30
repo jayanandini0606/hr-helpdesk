@@ -96,16 +96,25 @@ st.markdown("""
 
 
 # --------------------------------------------------
-# Auto-Initialize Database If Missing
+# Auto-Initialize Database If Missing or Incomplete
 # --------------------------------------------------
 def ensure_database_ready():
     db_file = get_db_path()
-    if not db_file.exists() or db_file.stat().st_size == 0:
-        with st.spinner("Initializing database and generating master policy data..."):
+    needs_init = not db_file.exists() or db_file.stat().st_size == 0
+    if not needs_init:
+        try:
+            cnt = query_one("SELECT COUNT(*) as count FROM Ticket", db_path=db_file)
+            if not cnt or cnt["count"] < 1000:
+                needs_init = True
+        except Exception:
+            needs_init = True
+
+    if needs_init:
+        with st.spinner("⚡ Initializing database with 5,000 baseline tickets, 20,000 messages, and 150 policy articles (Seed 20261022)..."):
             initialize_database(db_file)
-            generate_master_data(db_path=db_file)
-            seed_demo_scenarios(db_path=db_file)
-            st.success("Database initialized successfully with 100 employees, 20 policies, and 6 core demo scenarios!")
+            from src.generate_data import generate_dataset
+            res = generate_dataset(target_tickets=5000, db_path=db_file, seed=20261022, export_csv=False)
+            st.success(f"Database ready! Generated {res['tickets']:,} tickets and {res['messages']:,} messages.")
 
 ensure_database_ready()
 
@@ -142,19 +151,19 @@ else:
 
 st.sidebar.markdown("---")
 with st.sidebar.expander("⚡ Demo Management Tools"):
-    if st.button("Seed 6 Interview Scenarios"):
-        results = seed_demo_scenarios()
-        st.success(f"Seeded {len(results)} interview demo scenarios!")
-        st.rerun()
-
-    if st.button("Generate Full 5,000 Tickets Dataset"):
+    if st.button("Regenerate 5,000 Baseline Dataset (Seed 20261022)"):
         with st.spinner("Generating 5,000 tickets, 20,000 messages, and SLAs..."):
             from src.generate_data import generate_dataset
             res = generate_dataset(target_tickets=5000, seed=20261022, export_csv=False)
             st.success(f"Generated {res['tickets']:,} tickets and {res['messages']:,} messages!")
             st.rerun()
 
-    if st.button("Reset Master Database"):
+    if st.button("Seed 6 Interview Scenarios"):
+        results = seed_demo_scenarios()
+        st.success(f"Seeded {len(results)} interview demo scenarios!")
+        st.rerun()
+
+    if st.button("Reset to Master Only (100 Emps, 20 Policies)"):
         generate_master_data()
         st.success("Master database reset with 100% integrity!")
         st.rerun()
